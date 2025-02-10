@@ -1,4 +1,4 @@
-import Seller from "../models/Seller.js";
+import Seller from "../Models/Seller.js";
 
 import jsonwebtoken from "jsonwebtoken";
 import axios from "axios";

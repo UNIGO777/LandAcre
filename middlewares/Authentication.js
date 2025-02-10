@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import User from '../models/User.js';
-import Seller from '../models/Seller.js';
+import User from '../models/user.js';
+import Seller from '../models/seller.js';
 
 
 

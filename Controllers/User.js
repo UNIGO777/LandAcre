@@ -1,4 +1,4 @@
-import User from "../models/user.js"; // Ensure this import is correct
+import User from "../Models/User.js"; // Ensure this import is correct
 import axios from "axios";
 import bcrypt from "bcryptjs";
 import sendEmail from "../Nodemailer/Controller/Controller.js";

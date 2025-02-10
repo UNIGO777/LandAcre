@@ -1,5 +1,5 @@
 import express from "express";
-import { registerSeller, verifySellerRegistrationOTP, loginSeller, verifyLoginOTP, updateSellerAccount, sendChangePasswordOTP, changePassword, sendEmailVerificationOTP, confirmEmailVerificationOTP } from "../Controllers/Seller.js";
+import { registerSeller, verifySellerRegistrationOTP, loginSeller, verifyLoginOTP, updateSellerAccount, sendChangePasswordOTP, changePassword, sendEmailVerificationOTP, confirmEmailVerificationOTP } from "../controllers/Seller.js";
 import { handleFileUpload, upload } from "../Config/multer.js";
 import { authenticate, authenticateSeller } from "../middlewares/Authentication.js";
 

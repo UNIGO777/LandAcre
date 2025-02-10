@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, verifyRegistrationOtp, login, updateProfile, changePassword, passChangeOtpVerify, initiateEmailVerification, verifyEmail} from '../Controllers/User.js'; // Import the user controller
+import { register, verifyRegistrationOtp, login, updateProfile, changePassword, passChangeOtpVerify, initiateEmailVerification, verifyEmail} from '../controllers/User.js'; // Import the user controller
 import {handleFileUpload, upload} from '../Config/multer.js'; // Import the file upload middleware
 import { authenticateUser } from "../middlewares/Authentication.js"
 

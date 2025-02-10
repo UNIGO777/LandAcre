@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, verifyAdminOtp } from '../controllers/User.js'; // Import the user controller
+import { adminLogin, verifyAdminOtp } from '../Controllers/User.js'; // Import the user controller
 
 
 const router = express.Router();

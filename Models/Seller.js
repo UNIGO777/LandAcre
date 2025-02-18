@@ -31,16 +31,10 @@ const SellerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    projects: {
-      type: [
-        {
-          projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
-        },
-      ],
-      required: function() {
-        return this.sellerType === "builder"; // Only required if sellerType is builder
-      },
-    },
+    projects: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project"
+    }],
     emailVerified: {
       type: Boolean,
       default: false // Default value set to false for email verification status

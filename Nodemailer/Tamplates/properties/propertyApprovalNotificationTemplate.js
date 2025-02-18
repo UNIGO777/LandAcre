@@ -1,4 +1,4 @@
-export const propertyApprovalNotificationTemplate = (propertyTitle) => `<!DOCTYPE html>
+export const propertyApprovalNotificationTemplate = (User,propertyTitle) => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -46,11 +46,11 @@ export const propertyApprovalNotificationTemplate = (propertyTitle) => `<!DOCTYP
 <body>
     <div class="container">
         <div class="header">
-            <img src="/logo.png" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Property Approval Notification</h1>
-            <p>Dear Valued User,</p>
+            <p>Dear Valued ${User},</p>
             <p>We are pleased to inform you that your property titled <strong>"${propertyTitle}"</strong> has been successfully approved & listed on our platform.</p>
             <p>Thank you for choosing our platform to list your property. We wish you the best in your future endeavors.</p>
         </div>

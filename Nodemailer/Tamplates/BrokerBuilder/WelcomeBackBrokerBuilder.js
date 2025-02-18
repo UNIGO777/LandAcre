@@ -1,4 +1,4 @@
-export default ({ userName, role }) => `<!DOCTYPE html>
+export default ( name, role ) => `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -59,10 +59,10 @@ export default ({ userName, role }) => `<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <img src="../../../storage/logo.png" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
         </div>
         <div class="content">
-            <h1>Welcome Back, ${userName}!</h1>
+            <h1>Welcome Back, ${name}!</h1>
             <p>As a ${role}, we're excited to have you back. Explore verified listings, connect with trusted sellers, and make secure transactions effortlessly.</p>
             <a href="${process.env.Full_path}" class="cta-button">Explore Now</a>
         </div>

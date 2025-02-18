@@ -5,8 +5,8 @@ const PropertySchema = new mongoose.Schema({
   propertyType: {
     type: String,
     enum: [
-      'Flat/Apartment', 'Independent House/Villa', 'Builder Floor', 'Plot/Land',
-      '1 RK/Studio Apartment', 'Serviced Apartment', 'Farmhouse', 'Office', 'Retail', 'Comercial Plot/Land', 'Storage', 'Industry', 'Hospitality'
+      'Flat/Apartment', 'Independent House/Villa', 'Independent/Builder Floor', 'Plot/Land',
+      '1 RK/Studio Apartment', 'Serviced Apartment', 'Farmhouse', 'Office', 'Retail', 'Comercial Plot/Land', 'Storage', 'Industry', 'Hospitality', 'others'
     ],
     required: true
   },
@@ -25,7 +25,7 @@ const PropertySchema = new mongoose.Schema({
   },
   locationSchemaId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Location',
+    ref: 'PropertyLocation',
     required: true
   },
   propertyDetailSchemaId: {
@@ -38,11 +38,6 @@ const PropertySchema = new mongoose.Schema({
       required: true
     },
   },
-  propertyImagesAndVideosSchemaId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PropertyImagesAndVideos',
-    required: true
-  },
   amenitiesSchemaId: {
     refId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -50,6 +45,7 @@ const PropertySchema = new mongoose.Schema({
     },
     refType: {
       type: String,
+      default: 'Amenities',
       required: true
     },
   },
@@ -71,12 +67,6 @@ const PropertySchema = new mongoose.Schema({
     type: String,
     enum: ['North', 'East', 'West', 'South'],
     required: true
-  },
-  availableDate: {
-    type: Date,
-    required: function () {
-      return this.transactionalType === 'Rent' || this.transactionalType === 'PG';
-    }
   },
   propertyMedia: {
     photos: {
@@ -114,10 +104,20 @@ const PropertySchema = new mongoose.Schema({
     default: false,
     require: true
   },
+  status: {
+    type: String,
+    enum: ['requested', 'active', 'sold', 'blocked'],
+    required: true,
+    default: 'requested'
+  }
 
 }, { timestamps: true });
 
 const locationSchema = new mongoose.Schema({
+  state:{
+    type: String,
+    required: true
+  },
   city: {
     type: String,
     required: true
@@ -131,20 +131,14 @@ const locationSchema = new mongoose.Schema({
   },
   apartmentSociety: {
     type: String,
-    required: true
+   
   },
   houseNo: {
     type: String,
-    required: true
   }
 });
 
 const flatApartmentSchema = new mongoose.Schema({
-  propertyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ResidentialProperty', // Reference to ResidentialProperty model
-    required: true
-  },
   floorNumber: {
     type: Number,
     required: true
@@ -215,19 +209,10 @@ const flatApartmentSchema = new mongoose.Schema({
     type: Number, // Age of the property in years
     required: true,
     default: 0
-  },
-  available: {
-    type: Boolean,
-    default: true // Availability status
   }
 });
 
 const houseVilla = new mongoose.Schema({
-  propertyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ResidentialProperty', // Reference to ResidentialProperty model
-    required: true
-  },
   bedrooms: {
     type: Number,
     required: true
@@ -259,10 +244,12 @@ const houseVilla = new mongoose.Schema({
     areaUnitForCarpet: {
       type: String,
       enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      default: 'sq.ft'
     },
     areaUnitForBuiltUp: {
       type: String,
       enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      default: 'sq.ft'
     }
   },
   otherRooms: {
@@ -304,9 +291,10 @@ const houseVilla = new mongoose.Schema({
 });
 
 const IndependentOrBuilderFloor = new mongoose.Schema({
-  floorDetails: {
+  floorType: {
     type: String,
     enum: ['Independent', 'Builder Floor'],
+    default: 'Independent',
     required: true // Mandatory field to specify the type of floor
   },
   totalFloors: {
@@ -365,7 +353,7 @@ const IndependentOrBuilderFloor = new mongoose.Schema({
   furnishingItems: {
     type: [String], // Array for furnishing items like 'Furnished', 'Semi-Furnished', 'Unfurnished'
   },
-  reservedParking: {
+  reservedParking: [{
     type: {
       type: String,
       enum: ['Covered', 'Open', 'none'],
@@ -375,7 +363,7 @@ const IndependentOrBuilderFloor = new mongoose.Schema({
       type: Number,
       default: 0 // Default count of reserved parking spaces
     }
-  },
+  }],
   availabilityStatus: {
     type: String,
     enum: ['Ready to Move', 'Under Construction'],
@@ -469,11 +457,17 @@ const RkStudioApartment = new mongoose.Schema({
   furnishingItems: {
     type: [String], // Array for furnishing items like 'Furnished', 'Semi-Furnished', 'Unfurnished'
   },
-  reservedParking: {
-    type: String,
-    enum: ['Covered Parking', 'Open Parking', 'None'],
-    required: true
-  },
+  reservedParking: [{
+    type: {
+      type: String,
+      enum: ['Covered', 'Open', 'none'],
+      default: 'none'
+    },
+    count: {
+      type: Number,
+      default: 0 // Default count of reserved parking spaces
+    }
+  }],
   availabilityStatus: {
     type: String,
     enum: ['Ready to Move', 'Under Construction'],
@@ -842,12 +836,12 @@ const Retail = new mongoose.Schema({
   washrooms: {
     type: [String],
     enum: ['Private washrooms', 'Public washrooms', 'Not Available'], // Types of washrooms available
-    required: true
+    default: 'Not Available'
   },
   parkingType: {
     type: String,
     enum: ['Private Parking', 'Public Parking', 'Multilevel Parking', 'Not Available'], // Types of parking available
-    required: true
+    default: 'Not Available'
   },
   availabilityStatus: {
     type: String,
@@ -856,7 +850,6 @@ const Retail = new mongoose.Schema({
   },
   suitableForBusinessTypes: {
     type: [String], // Array for suitable business types
-    required: true
   }
 })
 
@@ -947,6 +940,7 @@ const Storage = new mongoose.Schema({
   washrooms: {
     type: String,
     enum: ['Available', 'Not Available'], // Availability of washrooms
+    default: 'Not Available',
     require: true
   },
   availabilityStatus: {
@@ -995,6 +989,7 @@ const Industry = new mongoose.Schema({
   washrooms: {
     type: String,
     enum: ['Available', 'Not Available'], // Availability of washrooms
+    default: 'Not Available',
     require: true
   },
   availabilityStatus: {
@@ -1093,11 +1088,10 @@ const OthersProperties = new mongoose.Schema({
   },
   totalFloors: {
     type: Number,
-    required: true // Total number of floors in the building
   },
   propertyOnFloor: {
     type: Number,
-    required: true // Property's floor number
+   
   },
   availabilityStatus: {
     type: String,
@@ -1123,11 +1117,6 @@ const OthersProperties = new mongoose.Schema({
 
 
 const amenitiesSchema = new mongoose.Schema({
-  propertyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Property',
-    required: true
-  },
   commonAmenities: [String], // Common amenities (e.g., Parking, Security)
   residentialAmenities: [String], // Specific to Residential properties
   commercialAmenities: [String], // Specific to Office/Retail spaces
@@ -1137,72 +1126,54 @@ const amenitiesSchema = new mongoose.Schema({
 
 
 const pricingSchema = new mongoose.Schema({
-  expectedPrice: {
-    type: Number, // Expected price for the property
-    required: true // This field is mandatory
-  },
   type: {
     type: String,
-    enum: ['rent', 'sell', 'pg'],
+    enum: ['Sell', 'Rent', 'PG'],
     required: true
   },
   rent: {
     type: Number, // Monthly rent amount
-    required: function () { return this.type === 'rent'; }
+    required: function () { return this.type === 'Rent'; }
   },
   salePrice: {
     type: Number, // Sale price of the property
-    required: function () { return this.type === 'sell'; }
+    required: function () { return this.type === 'Sell'; }
   },
   pgPrice: {
     type: Number, // Price for paying guest accommodation
-    required: function () { return this.type === 'pg'; }
+    required: function () { return this.type === 'PG'; }
   },
   pricePerAcre: {
-    type: Number, // Price per acre for selling property
-    required: function () { return this.type === 'sell'; }
+    type: Number, // Price per acre for Selling property
+    required: function () { return this.type === 'Sell'; }
   },
   pricePerSqFt: {
-    type: Number, // Price per square foot for selling property
-    required: function () { return this.type === 'sell'; }
+    type: Number, // Price per square foot for Selling property
+    required: function () { return this.type === 'Sell'; }
   },
-  totalArea: {
-    type: Number, // Total area of the property in square feet
-    required: true
-  },
-  additionalMeasurements: {
-    type: [{
-      measurementType: {
-        type: String, // Type of measurement (e.g., 'acre', 'hectare', 'square meter', etc.)
-        required: true
-      },
-      value: {
-        type: Number, // Value of the measurement
-        required: true
-      }
-    }],
-  }
 });
 
 
-const Property = mongoose.model('Property', PropertySchema);
-const Location = mongoose.model('PropertyLocation', locationSchema)
-const FlatApartment = mongoose.model('FlatApartment', flatApartmentSchema);
-const Amenities = mongoose.model('Amenities', amenitiesSchema);
-const Pricing = mongoose.model('Pricing', pricingSchema)
 
-const HouseVilla = mongoose.model('HouseVilla', houseVilla);
-const office = mongoose.model('Office', Office);
-const independentOrBuilderFloor = mongoose.model('IndependentOrBuilderFloor', IndependentOrBuilderFloor);
-const StudioApartment = mongoose.model('StudioApartment', RkStudioApartment);
-const servicedApartment = mongoose.model('ServicedApartment', ServicedApartment);
-const RetailShop = mongoose.model('RetailShop', Retail);
-const Farmhouse = mongoose.model('Farmhouse', FarmhouseDetail);
-const PlotLand = mongoose.model('PlotLand', LandPlot);
-const commercialPlotLand = mongoose.model('commercialPlotLand', CommercialPlotLand);
-const storage = mongoose.model('Storage', Storage);
-const industry = mongoose.model('Industry', Industry);
-const hospitality = mongoose.model('Hospitality', Hospitality);
-const othersProperties = mongoose.model('OthersProperties', OthersProperties);
+
+const Property = mongoose.models.Property || mongoose.model('Property', PropertySchema);
+const Location = mongoose.models.PropertyLocation || mongoose.model('PropertyLocation', locationSchema);
+const FlatApartment = mongoose.models.FlatApartment || mongoose.model('FlatApartment', flatApartmentSchema);
+const Amenities = mongoose.models.Amenities || mongoose.model('Amenities', amenitiesSchema);
+const Pricing = mongoose.models.Pricing || mongoose.model('Pricing', pricingSchema);
+
+const HouseVilla = mongoose.models.HouseVilla || mongoose.model('HouseVilla', houseVilla);
+const office = mongoose.models.Office || mongoose.model('Office', Office);
+const independentOrBuilderFloor = mongoose.models.IndependentOrBuilderFloor || mongoose.model('IndependentOrBuilderFloor', IndependentOrBuilderFloor);
+const StudioApartment = mongoose.models.StudioApartment || mongoose.model('StudioApartment', RkStudioApartment);
+const servicedApartment = mongoose.models.ServicedApartment || mongoose.model('ServicedApartment', ServicedApartment);
+const RetailShop = mongoose.models.RetailShop || mongoose.model('RetailShop', Retail);
+const Farmhouse = mongoose.models.Farmhouse || mongoose.model('Farmhouse', FarmhouseDetail);
+const PlotLand = mongoose.models.PlotLand || mongoose.model('PlotLand', LandPlot);
+const commercialPlotLand = mongoose.models.commercialPlotLand || mongoose.model('commercialPlotLand', CommercialPlotLand);
+const storage = mongoose.models.Storage || mongoose.model('Storage', Storage);
+const industry = mongoose.models.Industry || mongoose.model('Industry', Industry);
+const hospitality = mongoose.models.Hospitality || mongoose.model('Hospitality', Hospitality);
+const othersProperties = mongoose.models.OthersProperties || mongoose.model('OthersProperties', OthersProperties);
 
 export { Property, FlatApartment, HouseVilla, Location, StudioApartment, Amenities, RetailShop,office, Farmhouse, PlotLand, Pricing,independentOrBuilderFloor , servicedApartment,commercialPlotLand,storage,industry,hospitality,othersProperties};

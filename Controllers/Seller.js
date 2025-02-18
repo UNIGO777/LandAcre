@@ -8,6 +8,8 @@ import WelcomeBack from "../Nodemailer/Tamplates/BrokerBuilder/WelcomeBackBroker
 import AccoutUpdated from "../Nodemailer/Tamplates/BrokerBuilder/AccoutUpdated.js";
 import PasswordChanged from "../Nodemailer/Tamplates/BrokerBuilder/PasswordChanged.js";
 import EmailVerificationOtp from "../Nodemailer/Tamplates/EmailVerificationOtp.js";
+import createNotification from "../Hof/makeNotifiction.js";
+import AccountBloked from "../Nodemailer/Tamplates/BrokerBuilder/AccountBloked.js";
 
 
 const OTP_EXPIRY = 10 * 60 * 1000; // 10 minutes
@@ -38,7 +40,7 @@ const validatePhone = (phone) => {
 // **REGISTER SELLER**
 export const registerSeller = async (req, res) => {
     const { sellerType, name, email, phone, password, companyName, address } = req.body;
-    const profilePicture = req.file ? req.file.path : null; // Get the profile picture path from req.file
+    const profilePicture = req.file ? req.file.path.split('/').pop() : null; // Get the profile picture path from req.file
     
     try {
         // Validate input
@@ -129,7 +131,7 @@ export const loginSeller = async (req, res) => {
     const { email, password} = req.body;
 
     try {
-        const seller = await Seller.findOne({ "sellerDetails.email": email });
+        const seller = await Seller.findOne({ "sellerDetails.email": email, status: "active" });
         if (!seller) return res.status(404).json({ message: "Seller not found." });
 
         const isMatch = await seller.matchPassword(password);
@@ -156,6 +158,7 @@ export const loginSeller = async (req, res) => {
 export const verifyLoginOTP = async (req, res) => {
     const { phone, otp } = req.body;
     const tempData = OTP_MAP.get(phone);
+  
 
     if (!tempData) return res.status(400).json({ message: "Login session not found. Please request OTP again." });
 
@@ -171,9 +174,17 @@ export const verifyLoginOTP = async (req, res) => {
     const seller = await Seller.findById(tempData.sellerId);
     const token = jsonwebtoken.sign({ _id: seller._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
+
+    // Create login notification
+    await createNotification({
+        userType: 'Seller',
+        userId: seller._id,
+        message: `New login detected for ${seller.sellerDetails.name} at ${new Date().toLocaleString()}`
+    });
+
     OTP_MAP.delete(phone);
-    await sendEmail(tempData.email, "Welcome to LandAcers", ()=>WelcomeBack(tempData.name, seller.sellerType));
-    res.status(200).json({ message: "Login successful!", token, seller: { sellerDetails, _id, sellerType, sellingProperties, queries, subscription, subscriptionExpiry, status, createdAt, updatedAt } });
+    await sendEmail(seller.sellerDetails.email, "Welcome to LandAcers", ()=>WelcomeBack(seller.sellerDetails.name, seller.sellerType));
+    res.status(200).json({ message: "Login successful!", token, seller: { ...seller.toObject(), password: "" } });
 };
 
 
@@ -201,6 +212,13 @@ export const updateSellerAccount = async (req, res) => {
         if (profilePicture) {
             seller.sellerDetails.profilePicture = profilePicture;
         }
+
+        // Create account update notification
+        await createNotification({
+            userType: 'Seller',
+            userId: seller._id,
+            message: `Your account details were updated on ${new Date().toLocaleString()}`
+        });
 
         await seller.save();
         await sendEmail(seller.sellerDetails.email, "Seller account updated", () => AccoutUpdated(seller.sellerDetails.name, seller.sellerType)); // Updated to use seller's email
@@ -256,6 +274,12 @@ export const changePassword = async (req, res) => {
     }
 
     // Validate input
+    // Create password change notification for seller
+    await createNotification({
+        userType: 'Seller',
+        userId: seller._id,
+        message: 'Your password has been changed successfully. If you didn\'t make this change, please contact support immediately.'
+    });
    
 
     // Check if the OTP is valid
@@ -322,6 +346,7 @@ export const confirmEmailVerificationOTP = async (req, res) => {
 
     // Find the seller by user ID
     const seller = await Seller.findOne({ _id: userId });
+    
     if (!seller) {
         return res.status(404).json({ message: "Seller not found." });
     }
@@ -338,11 +363,253 @@ export const confirmEmailVerificationOTP = async (req, res) => {
     seller.emailVerified = true;
     await seller.save(); // Save the updated seller
 
+    // Create email verification confirmation notification
+    await createNotification({
+        userType: 'Seller',
+        userId: seller._id,
+        message: `Your email ${email} has been successfully verified`
+    });
+
     // Clear the OTP from the map
     EMAIL_VERIFICATION_MAP.delete(email);
 
     res.status(200).json({ message: "Email verified successfully!" });
 };
+
+export const blockSeller = async (req, res) => {
+    try {
+        const sellerId = req.params.id;
+
+        if (!sellerId) {
+            return res.status(400).json({ message: "Seller ID is required." });
+        }
+
+        const seller = await Seller.findById(sellerId);
+        
+        if (!seller) {
+            return res.status(404).json({ message: "Seller not found." });
+        }
+
+        if (seller.status === "blocked") {
+            return res.status(400).json({ message: "Seller is already blocked." });
+        }
+
+        seller.status = "blocked";
+        await seller.save();
+
+        
+        await sendEmail(seller.sellerDetails.email, "Account Blocked by Admin", () => AccountBloked(seller.sellerDetails.name, 'blocked'));
+
+        res.status(200).json({ message: "Seller blocked successfully!" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+export const DeleteSeller = async (req, res) => {
+    try {
+        const sellerId = req.user._id;
+
+        if (!sellerId) {
+            return res.status(400).json({ message: "Seller ID is required." });
+        }
+
+        const seller = await Seller.findById(sellerId);
+        
+        if (!seller) {
+            return res.status(404).json({ message: "Seller not found." });
+        }
+
+        if (seller.status === "blocked") {
+            return res.status(400).json({ message: "Seller is already blocked." });
+        }
+
+        seller.status = "blocked";
+        await seller.save();
+
+        await sendEmail(seller.sellerDetails.email, "Account Deleted", () => AccountBloked(seller.sellerDetails.name, 'deleted'));
+
+        res.status(200).json({ message: "Seller blocked successfully!" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
+
+// Function to switch seller type
+export const switchSellerType = async (req, res) => {
+    const { newSellerType } = req.body;
+    const userId = req.user._id;
+
+    if (!userId || !newSellerType) {
+        return res.status(400).json({ message: "User ID and new seller type are required." });
+    }
+
+    // Check if the new seller type is valid
+    const validSellerTypes = ["Individual", "Agent", "Builder"];
+    if (!validSellerTypes.includes(newSellerType)) {
+        return res.status(400).json({ message: "Invalid seller type. Allowed types are: Individual, Agent, Builder." });
+    }
+
+    // Find the seller by user ID
+    const seller = await Seller.findOne({ _id: userId });
+    if (!seller) {
+        return res.status(404).json({ message: "Seller not found." });
+    }
+
+    // Create seller type change notification
+    await createNotification({
+        userType: 'Seller',
+        userId: seller._id,
+        message: `Your seller type has been changed from ${seller.sellerType} to ${newSellerType} on ${new Date().toLocaleString()}`
+    });
+
+    // Update the seller type
+    seller.sellerType = newSellerType;
+    await seller.save(); // Save the updated seller
+
+    res.status(200).json({ message: "Seller type switched successfully!" });
+};
+
+
+export const getSellersByType = async (req, res) => {
+    try {
+        const { sellerType = 'Agent', page = 1 } = req.query;
+        const itemsPerPage = 20;
+        const skip = (page - 1) * itemsPerPage;
+
+        // Validate seller type
+        const validSellerTypes = ["Individual", "Agent", "Builder"];
+        if (!validSellerTypes.includes(sellerType)) {
+            return res.status(400).json({ message: "Invalid seller type. Allowed types are: Individual, Agent, Builder." });
+        }
+
+        // Build query to filter by seller type and active status
+        const query = sellerType === 'Agent' 
+            ? { sellerType: 'Agent', status: 'active' }  // Filter Agents with active status
+            : { sellerType, status: 'active' };          // Filter other types with active status
+
+        const totalSellers = await Seller.countDocuments(query);
+        const sellers = await Seller.find(query)
+            .select("sellerDetails sellingProperties projects")
+            .skip(skip)
+            .limit(itemsPerPage);
+
+        const processedSellers = sellers.map(seller => ({
+            ...seller.sellerDetails.toObject(),
+            howMuchSellingProjects: seller.projects.length,
+            howMuchSellingProperties: seller.sellingProperties.length
+        }));
+
+        res.status(200).json({
+            sellers: processedSellers,
+            pagination: {
+                currentPage: Number(page),
+                totalPages: Math.ceil(totalSellers / itemsPerPage),
+                totalSellers
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getSellerDetails = async (req, res) => {
+    try {
+        const { idOrEmail } = req.query;
+
+        if (!idOrEmail) {
+            return res.status(400).json({ message: "ID or email parameter is required" });
+        }
+
+        // Check if input is valid MongoDB ID or email
+        const isMongoId = /^[0-9a-fA-F]{24}$/.test(idOrEmail);
+        const query = isMongoId 
+            ? { _id: idOrEmail }
+            : { 'sellerDetails.email': idOrEmail };
+
+        const seller = await Seller.findOne(query)
+            .populate('sellingProperties projects')
+            .select('sellerDetails sellerType sellingProperties projects status _id')
+            .lean();
+
+        
+
+        if (!seller) {
+            return res.status(404).json({ message: "Seller not found" });
+        }
+
+        // Format response
+        const response = {
+            ...seller.sellerDetails,
+            sellerType: seller.sellerType,
+            howMuchSellingProjects: seller.projects.length,
+            howMuchSellingProperties: seller.sellingProperties.length,
+            createdAt: seller.createdAt
+        };
+
+
+
+        res.status(200).json(response);
+    } catch (error) {
+        res.status(500).json({ 
+            error: error.message,
+            message: "Error retrieving seller details. Please check the provided ID/email format." 
+        });
+    }
+};
+
+export const getSellersByadmin = async (req, res) => {
+    try {
+        const { status, page = 1, perPage = 20 } = req.query;
+        const pageNumber = parseInt(page);
+        const itemsPerPage = parseInt(perPage);
+
+        // Validate pagination parameters
+        if (isNaN(pageNumber) || pageNumber < 1 || isNaN(itemsPerPage) || itemsPerPage < 1) {
+            return res.status(400).json({ error: 'Invalid pagination parameters' });
+        }
+
+        // Build filter
+        const filter = {};
+        if (status) {
+            filter.status = status;
+        }
+
+        // Get total count
+        const totalSellers = await Seller.countDocuments(filter);
+        const totalPages = Math.ceil(totalSellers / itemsPerPage);
+
+        // Get paginated results
+        const sellers = await Seller.find(filter)
+            .sort({ createdAt: -1 })
+            .skip((pageNumber - 1) * itemsPerPage)
+            .limit(itemsPerPage)
+            .select('-__v -password -otp -otpExpires -sellingProperties -queries')
+            .lean();
+
+        res.status(200).json({
+            sellers,
+            totalPages,
+            currentPage: pageNumber,
+            totalSellers
+        });
+    } catch (error) {
+        console.error('Error fetching sellers:', error);
+        res.status(500).json({ 
+            error: error.message,
+            message: "Failed to retrieve seller data. Please try again later."
+        });
+    }
+};
+
+
+
+
+
+
+
 
 
 

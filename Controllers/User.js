@@ -7,6 +7,7 @@ import WelcomeBack from "../Nodemailer/Tamplates/User/WelcomeBack.js";
 import Update from "../Nodemailer/Tamplates/User/Update.js";
 import ChangePassword from "../Nodemailer/Tamplates/ChangePassword.js";
 import EmailVerificationOtp from "../Nodemailer/Tamplates/EmailVerificationOtp.js";
+import createNotification from "../Hof/makeNotifiction.js";
 
 
 
@@ -200,6 +201,13 @@ const login = async (req, res) => {
             phoneNumber: user.phoneNumber,
         };
 
+        // Create login notification
+        await createNotification({
+            userType: 'User',
+            userId: user._id,
+            message: `New login detected for ${user.firstName} at ${new Date().toLocaleString()}`
+        });
+
         res.status(200).json({
             message: "Login successful!",
             token,
@@ -247,6 +255,8 @@ const adminLogin = async (req, res) => {
         // Send OTP to the admin's phone number
         const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${adminUser.phoneNumber}`;
         await axios.get(otpAPIUrl);
+
+        
 
         res.status(200).json({
             message: "Login successful! OTP sent to your phone number.",
@@ -301,6 +311,12 @@ const verifyAdminOtp = async (req, res) => {
             phoneNumber: adminUser.phoneNumber,
         };
 
+        await createNotification({
+            userType: 'User',
+            userId: adminUser._id,
+            message: `New login detected for ${adminUser.firstName} at ${new Date().toLocaleString()}`
+        });
+
         // Remove the admin's entry from the temporary map
         AdminLoginTempUserMap.delete(adminUser.phoneNumber);
 
@@ -339,6 +355,9 @@ const changePassword = async (req, res) => {
         }
         PasswordChangeTempUserMap.set(phoneNumber, otp);
 
+        // Create password change OTP notification
+        
+
         res.status(200).json({ message: "OTP sent to user's phone number." });
     } catch (error) {
         console.error("Error in changePassword:", error);
@@ -371,6 +390,12 @@ const passChangeOtpVerify = async (req, res) => {
 
         // Remove the OTP from the temporary map
         PasswordChangeTempUserMap.delete(phoneNumber);
+
+        await createNotification({
+            userType: 'User',
+            userId: user._id,
+            message: `Password change OTP sent to ${phoneNumber} on ${new Date().toLocaleString()}`
+        });
 
         res.status(200).json({ message: "Password changed successfully." });
     } catch (error) {
@@ -413,6 +438,14 @@ const updateProfile = async (req, res) => {
         await sendEmail(updatedUser.email, "Profile Updated", () => Update(updatedUser.firstName));
 
         // Respond with the updated user information
+        // Create profile update notification
+        await createNotification({
+            userType: 'User',
+            userId: updatedUser._id,
+            message: `Your profile was updated on ${new Date().toLocaleString()}`
+        });
+
+
         res.status(200).json({
             _id: updatedUser._id,
             firstName: updatedUser.firstName,
@@ -453,6 +486,13 @@ const verifyEmail = async (req, res) => {
             user.emailVerified = true;
             await user.save();
         }
+
+        // Create email verification confirmation notification
+        await createNotification({
+            userType: 'User',
+            userId: user._id,
+            message: `Your email ${user.email} has been successfully verified`
+        });
 
         // Remove the temporary user from the map
         RegisterTempUserMap.delete(user.email);

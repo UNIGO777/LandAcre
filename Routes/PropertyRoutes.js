@@ -1,26 +1,21 @@
 import express from "express";
-import { approveProperty, createProperty, findPropertyById, searchProperties, updateProperty, updatePropertyStatus } from "../../LandAcers_backend_final/Controllers/Property.js";
+import { createProperty,  getProperty, markPropertyAsSold, deletePropertyByAdmin, deletePropertyBySeller,searchProperties, getProperties, getSellerProperties, getPropertiesBySeller, getPropertiesBySellerIdAdmin } from "../Controllers/Property.js";
+import {  authenticateAdmin, authenticateSeller } from "../middlewares/Authentication.js";
 import { upload } from "../Config/multer.js";
-import { authenticateAdmin, authenticateAndChackSellerAcc } from "../middlewares/Authentication.js";
-
-
 const router = express.Router();
 
-router.post("/create", authenticateAndChackSellerAcc, upload.fields([{ name: "thumbnailImage", maxCount: 1 }, { name: "images", maxCount: 10 }]), createProperty);
 
-router.put("/approve/:propertyId",authenticateAdmin, approveProperty);
-
-router.put("/update/:propertyId", authenticateAndChackSellerAcc, upload.fields([{ name: "thumbnailImage", maxCount: 1 }, { name: "images", maxCount: 10 }]), updateProperty);
-
-
-
-router.get("/search", searchProperties);
-
-router.put("/update-status/:propertyId", authenticateAndChackSellerAcc, updatePropertyStatus);
-
+router.post("/create", authenticateSeller, upload.fields([{ name: 'photos', maxCount: 10 }, { name: 'video', maxCount: 1 }]), createProperty);
+router.get('/seller/:sellerId', getSellerProperties)
+router.get('/propertiesbyseller', authenticateSeller, getPropertiesBySeller)
+router.get('/getsellerpropertiesbyadmin/:id', authenticateAdmin, getPropertiesBySellerIdAdmin)
+router.get('/', getProperties)
+router.get('/search', searchProperties);
+router.get('/:id', getProperty);
+router.put('/:id/sold', authenticateSeller, markPropertyAsSold);
+router.delete('/:id', authenticateSeller, deletePropertyBySeller);
 
 
-router.get("/:id", findPropertyById);
 
 
 

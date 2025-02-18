@@ -1,9 +1,14 @@
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({
+    userType: {
+        type: String,
+        enum: ["User", "Seller"],
+        required: true,
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        refPath: 'userType',
         required: true,
     },
     message: {

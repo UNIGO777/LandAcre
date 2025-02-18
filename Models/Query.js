@@ -1,28 +1,26 @@
 import mongoose from "mongoose";
 
 const querySchema = new mongoose.Schema({
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Reference to the User model
-    required: true,
+    ref: 'User',
+    require: true
   },
-  // This can refer to either Property or Project
-  itemId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    // Dynamically reference either Property or Project
-    refPath: "itemType", // This will tell Mongoose whether it's a Property or Project
-  },
-  // Type of the item, it can either be "Property" or "Project"
-  itemType: {
-    type: String,
-    enum: ["Property", "Project"], // To differentiate between Property and Project queries
-    required: true,
+  item: {
+    ItemId: {
+      type: String,
+      required: true,
+    },
+    Itemtype: {
+      type: String,
+      enum: ["Property", "Project"],
+      required: true,
+    }
   },
   status: {
     type: String,
     enum: ["seen", "unseen"],
-    default: "unseen", // Default is unseen
+    default: "unseen",
   },
   createdAt: {
     type: Date,
@@ -30,4 +28,6 @@ const querySchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Query", querySchema);
+const Quary = mongoose.model("Query", querySchema)
+
+export default Quary;

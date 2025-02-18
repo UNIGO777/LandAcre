@@ -9,7 +9,13 @@ import UserRoutes from "./Routes/User.js";
 import AdminRoutes from "./Routes/Admin.js";
 // import ChangePass from "./Routes/changePass.js";
 import Seller from "./Routes/Seller.js"
-// import  Property  from "./Routes/PropertyRoutes.js";
+import  Property  from "./Routes/PropertyRoutes.js";
+import Quary from "./Routes/Quary.js"
+import Project from "./Routes/Project.js"
+import Feedback from "./Routes/FeedBack.js"
+import Notification from "./Routes/Notifications.js";
+import featured from "./Routes/FeaturedItems.js";
+
 // import paymentRoutes from "./routes/paymentRoutes.js";
 
 
@@ -56,10 +62,14 @@ app.use(async(req,res,next)=>{
 // Routes
 app.use("/api/users", UserRoutes);
 app.use("/api/admin", AdminRoutes);
-// app.use("/api/update/password", ChangePass)
 app.use('/api/sellers', Seller)
-// app.use('/api/properties', Property)
-// app.use("/api/properties", propertyRoutes);
+app.use('/api/properties', Property)
+app.use('/api/quary', Quary)
+app.use('/api/projects', Project)
+app.use('/api/feedback', Feedback)
+app.use('/api/feedback', Feedback)
+app.use('/api/notifications', Notification)
+app.use('/api/feature', featured)
 // app.use("/api/payments", paymentRoutes);
 
 // Root route

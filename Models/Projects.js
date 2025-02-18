@@ -6,8 +6,18 @@ const projectSchema = new mongoose.Schema({
     required: true // Mandatory field for project name
   },
   location: {
-    type: String,
-    required: true // Mandatory field for project location
+    state:{
+      type: String,
+      required: true
+    },
+    city: {
+      type: String,
+      required: true
+    },
+    locality: {
+      type: String,
+      required: true
+    },
   },
   totalUnits: {
     type: Number,
@@ -40,6 +50,11 @@ const projectSchema = new mongoose.Schema({
   },
   description: {
     type: String, // Description of the project
+  },
+  status: {
+    type: String,
+    enum: ["requested","active", "closed", "blocked" ],
+    default: "requested",
   },
   images: {
     type: [String], // Array for image URLs related to the project

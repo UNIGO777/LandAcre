@@ -49,7 +49,7 @@ export const userPropertyUpdateTemplate = (userName, propertyDetails) => `<!DOCT
 <body>
     <div class="container">
         <div class="header">
-            <img src="/logo.png" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Property Update Confirmation</h1>
@@ -120,7 +120,7 @@ export const adminPropertyUpdateNotificationTemplate = (propertyDetails) => `<!D
 <body>
     <div class="container">
         <div class="header">
-            <img src="/logo.png" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Property Update Notification</h1>

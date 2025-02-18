@@ -49,7 +49,7 @@ export const userPropertyRequestTemplate = (userName, propertyDetails) => `<!DOC
 <body>
     <div class="container">
         <div class="header">
-            <img src="/logo.png" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Property Request Confirmation</h1>
@@ -57,7 +57,7 @@ export const userPropertyRequestTemplate = (userName, propertyDetails) => `<!DOC
             <p>Your request to post a property has been received. Here are the details:</p>
             <p><strong>Property Title:</strong> ${propertyDetails.title}</p>
             <p><strong>Property Type:</strong> ${propertyDetails.type}</p>
-            <p><strong>Description:</strong> ${propertyDetails.description}</p>
+            <p><strong>Transaction Type:</strong> ${propertyDetails.transactionType}</p>
             <p><strong>PropertyId:</strong> ${propertyDetails._id}</p>
             <p>We will review your request and notify you once it is approved.</p>
         </div>
@@ -120,7 +120,7 @@ export const adminPropertyRequestNotificationTemplate = (propertyDetails) => `<!
 <body>
     <div class="container">
         <div class="header">
-            <img src="/logo.png" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>New Property Request</h1>
@@ -128,7 +128,7 @@ export const adminPropertyRequestNotificationTemplate = (propertyDetails) => `<!
             <p>A new property request has been submitted. Here are the details:</p>
             <p><strong>Property Title:</strong> ${propertyDetails.title}</p>
             <p><strong>Property Type:</strong> ${propertyDetails.type}</p>
-            <p><strong>Description:</strong> ${propertyDetails.description}</p>
+            <p><strong>Transaction Type:</strong> ${propertyDetails.transactionType}</p>
             <p><strong>PropertyId:</strong> ${propertyDetails._id}</p>
             <p>Please review the request and take the necessary actions.</p>
         </div>

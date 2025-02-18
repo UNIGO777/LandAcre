@@ -1,38 +1,30 @@
 import mongoose from "mongoose";
 
-const featuredProjectSchema = new mongoose.Schema({
-  projectId: {
+const featuredItemSchema = new mongoose.Schema({
+  itemType: {
+    type: String,
+    enum: ["Project", "Property"], // Type of featured item
+    required: true,
+  },
+  itemId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Project", // Reference to Project model
+    refPath: "itemType", // Dynamic reference based on itemType
     required: true,
   },
   featuredDate: {
     type: Date,
-    default: Date.now, // Date when the project was featured
+    default: Date.now, // Date when the item was featured
   },
-  isActive: {
-    type: Boolean,
-    default: true, // Indicates if the featured project is currently active
-  },
-});
-
-const featuredPropertySchema = new mongoose.Schema({
-  propertyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Property", // Reference to Property model
+  endDate:{
+    type: Date,
     required: true,
   },
-  featuredDate: {
-    type: Date,
-    default: Date.now, // Date when the property was featured
-  },
   isActive: {
     type: Boolean,
-    default: true, // Indicates if the featured property is currently active
+    default: true, // Indicates if the featured item is currently active
   },
 });
 
-const FeaturedProject = mongoose.model("FeaturedProject", featuredProjectSchema);
-const FeaturedProperty = mongoose.model("FeaturedProperty", featuredPropertySchema);
+const FeaturedItem = mongoose.model("FeaturedItem", featuredItemSchema);
 
-export { FeaturedProject, FeaturedProperty };
+export { FeaturedItem };

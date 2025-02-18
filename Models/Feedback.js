@@ -1,84 +1,42 @@
 import mongoose from "mongoose";
 
-const propertyFeedbackSchema = new mongoose.Schema({
+const feedbackSchema = new mongoose.Schema({
+  feedbackType: {
+    type: String,
+    enum: ['property', 'project', 'website'],
+    required: true
+  },
   propertyId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Property", // Reference to Property model
-    required: true,
+    ref: "Property",
+    required: function() { return this.feedbackType === 'property'; }
   },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Reference to User model
-    required: true,
-  },
-  rating: {
-    type: Number,
-    min: 1,
-    max: 5,
-    required: true, // Rating from 1 to 5
-  },
-  comment: {
-    type: String,
-    required: true, // Feedback comment
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now, // Date when feedback was created
-  },
-});
-
-const projectFeedbackSchema = new mongoose.Schema({
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Project", // Reference to Project model
-    required: true,
+    ref: "Project",
+    required: function() { return this.feedbackType === 'project'; }
   },
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Reference to User model
-    required: true,
+    ref: "User",
+    required: true
   },
   rating: {
     type: Number,
     min: 1,
     max: 5,
-    required: true, // Rating from 1 to 5
+    required: true
   },
   comment: {
     type: String,
-    required: true, // Feedback comment
+    required: false
   },
   createdAt: {
     type: Date,
-    default: Date.now, // Date when feedback was created
-  },
+    default: Date.now
+  }
 });
 
-const websiteFeedbackSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Reference to User model
-    required: true,
-  },
-  rating: {
-    type: Number,
-    min: 1,
-    max: 5,
-    required: true, // Rating from 1 to 5
-  },
-  comment: {
-    type: String,
-    required: true, // Feedback comment
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now, // Date when feedback was created
-  },
-});
+const Feedback = mongoose.model("Feedback", feedbackSchema);
 
-const PropertyFeedback = mongoose.model("PropertyFeedback", propertyFeedbackSchema);
-const ProjectFeedback = mongoose.model("ProjectFeedback", projectFeedbackSchema);
-const WebsiteFeedback = mongoose.model("WebsiteFeedback", websiteFeedbackSchema);
-
-export { PropertyFeedback, ProjectFeedback, WebsiteFeedback };
-
+export { Feedback };

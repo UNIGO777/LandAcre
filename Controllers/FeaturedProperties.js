@@ -1,4 +1,4 @@
-import { FeaturedItem } from '../models/FeaturedProjects&Properties.js';
+import { FeaturedItem } from '../Models/FeaturedProjects&Properties.js';
 import Project from '../Models/Projects.js';
 import {Property} from '../Models/Property.js';
 

@@ -1,5 +1,5 @@
 import { Feedback } from "../Models/Feedback.js";
-import { Property } from "../Models/property.js";
+import { Property } from "../Models/Property.js";
 import Project from '../Models/Projects.js';
 import createNotification from "../Hof/makeNotifiction.js";
 

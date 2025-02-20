@@ -1143,14 +1143,6 @@ const pricingSchema = new mongoose.Schema({
     type: Number, // Price for paying guest accommodation
     required: function () { return this.type === 'PG'; }
   },
-  pricePerAcre: {
-    type: Number, // Price per acre for Selling property
-    required: function () { return this.type === 'Sell'; }
-  },
-  pricePerSqFt: {
-    type: Number, // Price per square foot for Selling property
-    required: function () { return this.type === 'Sell'; }
-  },
 });
 
 

@@ -111,7 +111,13 @@ export const getActiveFeaturedItems = async (req, res) => {
         }
 
         const featuredItems = await FeaturedItem.find(query)
-            .populate('itemId')
+            .populate({
+                path: 'itemId',
+                populate: [
+                    { path: 'locationSchemaId', model: 'PropertyLocation' },
+                    { path: 'pricingDetails', model: 'Pricing' }
+                ]
+            })
             .sort({ featuredDate: -1 });
 
         res.status(200).json({

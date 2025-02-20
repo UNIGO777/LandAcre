@@ -4,7 +4,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import { transporter } from "./Nodemailer/InitializeEmailService.js";
 import bodyParser from "body-parser";
-
+import path from 'path';
 import UserRoutes from "./Routes/User.js";
 import AdminRoutes from "./Routes/Admin.js";
 // import ChangePass from "./Routes/changePass.js";
@@ -19,12 +19,12 @@ import featured from "./Routes/FeaturedItems.js";
 // import paymentRoutes from "./routes/paymentRoutes.js";
 
 
-
 // Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
+
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -39,6 +39,14 @@ transporter.verify((error, success) => {
     } else {
       console.log('Email transporter verified and ready to send emails.');
     }
+});
+
+app.use('/storage', express.static(path.join(process.cwd(), 'storage')));
+
+app.use('/storage', (err, req, res, next) => {
+  console.log("hek")
+  console.error('Static file error:', err);
+  res.status(404).send('File not found');
 });
 
 // Middleware

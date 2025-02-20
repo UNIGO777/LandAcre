@@ -117,7 +117,7 @@ export const getActiveFeaturedItems = async (req, res) => {
                 path: 'itemId',
                 // Add match condition for upcoming projects if requested
                 match: {status: 'active'},
-                populate: itemType === "property" ? [
+                populate: itemType === "Property" ? [
                     { path: 'locationSchemaId', model: 'PropertyLocation' },
                     { path: 'pricingDetails', model: 'Pricing' }
                 ] : []

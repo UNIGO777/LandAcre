@@ -91,8 +91,9 @@ export const deleteFeaturedItem = async (req, res) => {
 // Get all active featured items
 export const getActiveFeaturedItems = async (req, res) => {
     try {
-        const { itemType } = req.query;
+        const { itemType, upcoming } = req.query;
         const now = new Date();
+        const isUpcomingRequested = upcoming === true;
         
         // Build base query
         const query = { 
@@ -113,16 +114,21 @@ export const getActiveFeaturedItems = async (req, res) => {
         const featuredItems = await FeaturedItem.find(query)
             .populate({
                 path: 'itemId',
-                populate: [
+                // Add match condition for upcoming projects if requested
+                match: itemType === 'Project' && isUpcomingRequested ? { isUpcomming: true } : {},
+                populate: itemType == "Property" ? [
                     { path: 'locationSchemaId', model: 'PropertyLocation' },
                     { path: 'pricingDetails', model: 'Pricing' }
-                ]
+                ] : []
             })
             .sort({ featuredDate: -1 });
 
+        // Filter out null results from upcoming match condition
+        const filteredItems = featuredItems.filter(item => item.itemId !== null);
+
         res.status(200).json({
             message: 'Active featured items retrieved successfully',
-            data: featuredItems
+            data: filteredItems
         });
     } catch (error) {
         console.error('Error fetching featured items:', error);

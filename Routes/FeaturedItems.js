@@ -5,10 +5,10 @@ import { authenticateAdmin } from "../middlewares/Authentication.js";
 const router = express.Router();
 
 // Create featured item
-router.post('/', createFeaturedItem);
+router.post('/', authenticateAdmin,createFeaturedItem);
 
 // Delete featured item
-router.delete('/:id', deleteFeaturedItem);
+router.delete('/:id', authenticateAdmin, deleteFeaturedItem);
 
 // Get active featured items
 router.get('/', getActiveFeaturedItems);

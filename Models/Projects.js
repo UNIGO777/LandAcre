@@ -53,11 +53,16 @@ const projectSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["requested","active", "closed", "blocked" ],
+    enum: ["requested", "active", "closed", "blocked" ],
     default: "requested",
   },
   images: {
     type: [String], // Array for image URLs related to the project
+  },
+  isUpcomming:{
+    type:Boolean,
+    default: false,
+    require: true
   },
   video: {
     type: String, // URL for a video related to the project

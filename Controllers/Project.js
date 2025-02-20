@@ -37,6 +37,7 @@ export const createProject = async (req, res) => {
             completionDate,
             projectType,
             sellerId,
+            isUpcomming,
             description,
             images,
             video

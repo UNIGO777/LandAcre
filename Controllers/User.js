@@ -224,6 +224,7 @@ const login = async (req, res) => {
 
 const adminLogin = async (req, res) => {
     const { email, password} = req.body;
+    console.log(email, password,"kdsjhakf")
 
     try {
         const adminUser = await User.findOne({ 
@@ -253,8 +254,9 @@ const adminLogin = async (req, res) => {
         AdminLoginTempUserMap.set(phoneNumber, { otp: otp });
 
         // Send OTP to the admin's phone number
-        const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${adminUser.phoneNumber}`;
-        await axios.get(otpAPIUrl);
+        // const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${adminUser.phoneNumber}`;
+        console.log(otp)
+        // await axios.get(otpAPIUrl);
 
         
 
@@ -323,7 +325,6 @@ const verifyAdminOtp = async (req, res) => {
         res.status(200).json({
             message: "Admin login successful!",
             token,
-            user: adminDataResponse,
         });
     } catch (error) {
         console.error("Admin OTP verification error:", error);
@@ -348,7 +349,7 @@ const changePassword = async (req, res) => {
         const otp = generateOtp(); // Assuming generateOtp method is available
         const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${phoneNumber}`;
         await axios.get(otpAPIUrl);
-
+        
         // If the phone number already exists in the map, delete it first
         if (PasswordChangeTempUserMap.has(phoneNumber)) {
             PasswordChangeTempUserMap.delete(phoneNumber);
@@ -529,6 +530,127 @@ const initiateEmailVerification = async (req, res) => {
 };
 
 
+// Add this new function after your existing exports
+
+const blockUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { reason } = req.body;
+
+        // Find the user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if user is already blocked
+        if (user.status === 'blocked') {
+            return res.status(400).json({ message: "User is already blocked" });
+        }
+
+        // Update user status to blocked
+        user.status = 'blocked';
+        user.blockReason = reason;
+        user.blockedAt = new Date();
+        await user.save();
+
+        // Send email notification to user
+        await sendEmail(
+            user.email,
+            "Account Blocked",
+            `Dear ${user.firstName},\n\nYour account has been blocked by the administrator.\nReason: ${reason}\n\nIf you believe this is a mistake, please contact support.`
+        );
+
+        // Create notification for user
+        await createNotification({
+            userType: 'User',
+            userId: user._id,
+            message: `Your account has been blocked. Reason: ${reason}`
+        });
+
+        res.status(200).json({
+            message: "User blocked successfully",
+            user: {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                status: user.status,
+                blockReason: user.blockReason,
+                blockedAt: user.blockedAt
+            }
+        });
+
+    } catch (error) {
+        console.error("Error blocking user:", error);
+        res.status(500).json({
+            message: "Server error while blocking user",
+            error: error.message
+        });
+    }
+};
+
+const unblockUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        
+
+        // Find the user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if user is already unblocked
+        if (user.status !== 'blocked') {
+            return res.status(400).json({ message: "User is not blocked" });
+        }
+
+        // Update user status to active
+        user.status = 'active';
+        user.blockReason = undefined;
+        user.blockedAt = undefined;
+        await user.save();
+
+        // Send email notification to user
+        await sendEmail(
+            user.email,
+            "Account Unblocked",
+            `Dear ${user.firstName},\n\nYour account has been unblocked. You can now access your account normally.\n\nThank you for your patience.`
+        );
+
+        // Create notification for user
+        await createNotification({
+            userType: 'User',
+            userId: user._id,
+            message: `Your account has been unblocked. You can now access your account normally.`
+        });
+
+        res.status(200).json({
+            message: "User unblocked successfully",
+            user: {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                status: user.status
+            }
+        });
+
+    } catch (error) {
+        console.error("Error unblocking user:", error);
+        res.status(500).json({
+            message: "Server error while unblocking user",
+            error: error.message
+        });
+    }
+};
 
 
-export { register, verifyRegistrationOtp, login, updateProfile, adminLogin, verifyAdminOtp, changePassword, passChangeOtpVerify,initiateEmailVerification,verifyEmail};
+
+
+
+
+
+export { register,blockUser, unblockUser, verifyRegistrationOtp, login, updateProfile, adminLogin, verifyAdminOtp, changePassword, passChangeOtpVerify,initiateEmailVerification,verifyEmail};

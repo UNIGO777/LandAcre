@@ -86,7 +86,7 @@ userSchema.methods.generateAuthToken = async function () {
       expiryDuration = '7d'; // 7 days
       break;
     case "admin":
-      expiryDuration = '1h'; // 1 hour
+      expiryDuration = '7d'; // 1 hour
       break;
     default:
       expiryDuration = '7d'; // Default to 7 days if role is not recognized

@@ -5,14 +5,14 @@ import { upload } from "../Config/multer.js";
 const router = express.Router();
 
 
+router.get('/propertiesbyseller',  authenticateSeller, getPropertiesBySeller)
 router.post("/create", authenticateSeller, upload.fields([{ name: 'photos', maxCount: 10 }, { name: 'video', maxCount: 1 }]), createProperty);
 router.get('/seller/:sellerId', getSellerProperties)
-router.get('/propertiesbyseller', authenticateSeller, getPropertiesBySeller)
 router.get('/getsellerpropertiesbyadmin/:id', authenticateAdmin, getPropertiesBySellerIdAdmin)
 router.get('/', getProperties)
 router.get('/search', searchProperties);
 router.get('/:id', getProperty);
-router.put('/:id/sold', authenticateSeller, markPropertyAsSold);
+router.put('/:id/mark-sold', authenticateSeller, markPropertyAsSold);
 router.delete('/:id', authenticateSeller, deletePropertyBySeller);
 
 

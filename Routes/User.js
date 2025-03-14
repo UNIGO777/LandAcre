@@ -1,7 +1,7 @@
 import express from 'express';
-import { register, verifyRegistrationOtp, login, updateProfile, changePassword, passChangeOtpVerify, initiateEmailVerification, verifyEmail} from '../Controllers/User.js'; // Import the user controller
+import { register, verifyRegistrationOtp, login, updateProfile, changePassword, passChangeOtpVerify, initiateEmailVerification, verifyEmail, blockUser, unblockUser} from '../Controllers/User.js'; // Import the user controller
 import {handleFileUpload, upload} from '../Config/multer.js'; // Import the file upload middleware
-import { authenticateUser } from "../middlewares/Authentication.js"
+import { authenticateAdmin, authenticateUser } from "../middlewares/Authentication.js"
 
 const router = express.Router();
 
@@ -24,6 +24,8 @@ router.post('/update', authenticateUser ,upload.array('profilePicture'), handleF
 
 // Initiate email verification
 router.get('/initiateEmailVerification', authenticateUser, initiateEmailVerification);
+
+
 
 // Verify email with OTP
 router.post('/verifyEmail', authenticateUser, verifyEmail);

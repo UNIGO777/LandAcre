@@ -66,8 +66,8 @@ const createFeedback = async (req, res) => {
         if (savedFeedback.feedbackType === 'property' || savedFeedback.feedbackType === 'project') {
             let entityType = savedFeedback.feedbackType;
             const entity = entityType === 'property' 
-                ? await Property.findById(savedFeedback.propertyId)
-                : await Project.findById(savedFeedback.projectId);
+                ? await Property.findById(savedFeedback?.propertyId)
+                : await Project.findById(savedFeedback?.projectId);
             
             if (entity && entity.sellerId) {
                 await createNotification({

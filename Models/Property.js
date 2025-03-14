@@ -5,8 +5,8 @@ const PropertySchema = new mongoose.Schema({
   propertyType: {
     type: String,
     enum: [
-      'Flat/Apartment', 'Independent House/Villa', 'Independent/Builder Floor', 'Plot/Land',
-      '1 RK/Studio Apartment', 'Serviced Apartment', 'Farmhouse', 'Office', 'Retail', 'Comercial Plot/Land', 'Storage', 'Industry', 'Hospitality', 'others'
+      'FlatApartment', 'IndependentHouseVilla', 'IndependentBuilderFloor', 'Plot', 'Land',
+      'RKStudioApartment', 'ServicedApartment', 'Farmhouse', 'Office', 'Retail', 'Storage', 'Industry', 'Hospitality', 'others'
     ],
     required: true
   },
@@ -114,7 +114,7 @@ const PropertySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const locationSchema = new mongoose.Schema({
-  state:{
+  state: {
     type: String,
     required: true
   },
@@ -131,7 +131,7 @@ const locationSchema = new mongoose.Schema({
   },
   apartmentSociety: {
     type: String,
-   
+
   },
   houseNo: {
     type: String,
@@ -168,16 +168,18 @@ const flatApartmentSchema = new mongoose.Schema({
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
-      required: true
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
+      default: 'sq.ft'
     },
     areaUnitForBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
+      default: 'sq.ft'
     },
     areaUnitForSuperBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
+      default: 'sq.ft'
     }
   },
   balconies: {
@@ -190,7 +192,8 @@ const flatApartmentSchema = new mongoose.Schema({
   furnishing: {
     type: String,
     enum: ['Furnished', 'Semi-Furnished', 'Unfurnished'],
-    required: true
+    required: true,
+    default: 'Unfurnished'
   },
   furnishingItems: {
     type: [String], // Array for furnishing items like 'Furnished', 'Semi-Furnished', 'Unfurnished'
@@ -198,12 +201,14 @@ const flatApartmentSchema = new mongoose.Schema({
   reservedParking: {
     type: String,
     enum: ['Covered Parking', 'Open Parking', 'None'],
-    required: true
+    required: true,
+    default: 'None'
   },
   availabilityStatus: {
     type: String,
     enum: ['Ready to Move', 'Under Construction'],
-    required: true
+    required: true,
+    default: 'Under Construction'
   },
   propertyAge: {
     type: Number, // Age of the property in years
@@ -238,17 +243,17 @@ const houseVilla = new mongoose.Schema({
     },
     areaUnitForPlot: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       default: 'sq.ft'
     },
     areaUnitForBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       default: 'sq.ft'
     }
   },
@@ -290,7 +295,7 @@ const houseVilla = new mongoose.Schema({
   },
 });
 
-const IndependentOrBuilderFloor = new mongoose.Schema({
+const IndependentBuilderFloor = new mongoose.Schema({
   floorType: {
     type: String,
     enum: ['Independent', 'Builder Floor'],
@@ -330,16 +335,16 @@ const IndependentOrBuilderFloor = new mongoose.Schema({
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
     },
     areaUnitForBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     },
     areaUnitForSuperBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     }
   },
   otherRooms: {
@@ -353,17 +358,11 @@ const IndependentOrBuilderFloor = new mongoose.Schema({
   furnishingItems: {
     type: [String], // Array for furnishing items like 'Furnished', 'Semi-Furnished', 'Unfurnished'
   },
-  reservedParking: [{
-    type: {
-      type: String,
-      enum: ['Covered', 'Open', 'none'],
-      default: 'none'
-    },
-    count: {
-      type: Number,
-      default: 0 // Default count of reserved parking spaces
-    }
-  }],
+  reservedParking: {
+    type: String,
+    enum: ['Covered', 'Open', 'none'],
+    default: 'none'
+  },
   availabilityStatus: {
     type: String,
     enum: ['Ready to Move', 'Under Construction'],
@@ -371,11 +370,21 @@ const IndependentOrBuilderFloor = new mongoose.Schema({
   },
 });
 
-const LandPlot = new mongoose.Schema({
+const Land = new mongoose.Schema({
+  landType: {
+    type: String,
+    enum: ['Commercial', 'Residential'],
+    required: true
+  },
+  commercialType: {
+    type: String,
+    enum: ['Agricultural / Farm Land', 'Industrial Land', 'Commercial Land'],
+    required: function () { return this.type === 'Commercial'; }
+  },
   areaDetails: {
     plotArea: {
       type: Number,
-      required: true // Mandatory field
+      required: true
     },
     areaUnitForPlot: {
       type: String,
@@ -383,6 +392,7 @@ const LandPlot = new mongoose.Schema({
       required: true
     },
   },
+  // ... rest of the original LandPlot fields
   lengthOfPlot: {
     type: Number,
   },
@@ -394,7 +404,7 @@ const LandPlot = new mongoose.Schema({
   },
   boundaryWall: {
     type: Boolean,
-    required: true // Indicates if there is a boundary wall around the property
+    required: true
   },
   openSides: {
     type: Number,
@@ -403,11 +413,62 @@ const LandPlot = new mongoose.Schema({
   },
   constructionDone: {
     type: Boolean,
-    required: true // Indicates if any construction has been done on the property
+    required: true
   },
   possessionDate: {
     type: Date,
-    required: true, // Mandatory field for possession date
+    required: true,
+  },
+});
+
+const Plot = new mongoose.Schema({
+  plotType: {
+    type: String,
+    enum: ['Commercial', 'Residential'],
+    required: true
+  },
+  commercialType: {
+    type: String,
+    enum: ['Industrial Plot', 'Commercial Plot'],
+    required: function () { return this.type === 'Commercial'; }
+  },
+  areaDetails: {
+    plotArea: {
+      type: Number,
+      required: true
+    },
+    areaUnitForPlot: {
+      type: String,
+      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      required: true
+    },
+  },
+  // ... rest of the original LandPlot fields
+  lengthOfPlot: {
+    type: Number,
+  },
+  breadthOfPlot: {
+    type: Number,
+  },
+  floorsAllowed: {
+    type: Number,
+  },
+  boundaryWall: {
+    type: Boolean,
+    required: true
+  },
+  openSides: {
+    type: Number,
+    enum: [0, 1, 2, 3, 4, 5],
+    required: true
+  },
+  constructionDone: {
+    type: Boolean,
+    required: true
+  },
+  possessionDate: {
+    type: Date,
+    required: true,
   },
 });
 
@@ -437,16 +498,16 @@ const RkStudioApartment = new mongoose.Schema({
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
     },
     areaUnitForBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     },
     areaUnitForSuperBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     }
   },
   furnishing: {
@@ -457,17 +518,11 @@ const RkStudioApartment = new mongoose.Schema({
   furnishingItems: {
     type: [String], // Array for furnishing items like 'Furnished', 'Semi-Furnished', 'Unfurnished'
   },
-  reservedParking: [{
-    type: {
-      type: String,
-      enum: ['Covered', 'Open', 'none'],
-      default: 'none'
-    },
-    count: {
-      type: Number,
-      default: 0 // Default count of reserved parking spaces
-    }
-  }],
+  reservedParking: {
+    type: String,
+    enum: ['Covered', 'Open', 'none'],
+    default: 'none'
+  },
   availabilityStatus: {
     type: String,
     enum: ['Ready to Move', 'Under Construction'],
@@ -514,16 +569,16 @@ const ServicedApartment = new mongoose.Schema({
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
     },
     areaUnitForBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     },
     areaUnitForSuperBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     }
   },
   otherRooms: {
@@ -589,17 +644,17 @@ const FarmhouseDetail = new mongoose.Schema({
     },
     areaUnitForPlot: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
     },
     areaUnitForBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     },
   },
   otherRooms: {
@@ -654,13 +709,13 @@ const Office = new mongoose.Schema({
     },
     areaUnitForCarpet: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
       required: true
 
     },
     areaUnitForSuperBuiltUp: {
       type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
+      enum: ['sq.ft', 'sq.yards', 'sq.m.'],
     }
   },
   constructionStatus: {
@@ -677,75 +732,55 @@ const Office = new mongoose.Schema({
       return this.WhatKindOfOfficeIsit === 'Bare shell office space';
     }
   },
-  officeSetup: {
-    minSeats: {
-      type: Number,
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }  // Minimum number of seats
-    },
-    maxSeats: {
-      type: Number // Maximum number of seats (optional)
-    },
-    cabins: {
-      type: Number,
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }  // Number of meeting rooms
-    },
-    meetingRooms: {
-      type: Number,
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }  // Number of meeting rooms
-    },
-    washrooms: {
-      type: String,
-      enum: ['Available', 'Not Available'], // Availability of washrooms
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }
-    },
-    conferenceRoom: {
-      type: String,
-      enum: ['Available', 'Not Available'], // Availability of conference room
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }
-    },
-    receptionArea: {
-      type: String,
-      enum: ['Available', 'Not Available'], // Availability of reception area
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }
-    },
-    pantryType: {
-      type: String,
-      enum: ['Shared', 'Private', 'Not Available'], // Type of pantry
-      required: function () {
-        return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-      }
-    }
+
+  minSeats: {
+    type: Number,
+    required: true  // Minimum number of seats
+  },
+  maxSeats: {
+    type: Number // Maximum number of seats (optional)
+  },
+  cabins: {
+    type: Number,
+    required: true  // Number of meeting rooms
+  },
+  meetingRooms: {
+    type: Number,
+    required: true  // Number of meeting rooms
+  },
+  washrooms: {
+    type: String,
+    enum: ['Available', 'Not Available'], // Availability of washrooms
+    required: true
+  },
+  conferenceRoom: {
+    type: String,
+    enum: ['Available', 'Not Available'], // Availability of conference room
+    required: true
+  },
+  receptionArea: {
+    type: String,
+    enum: ['Available', 'Not Available'], // Availability of reception area
+    required: true
+  },
+  pantryType: {
+    type: String,
+    enum: ['Shared', 'Private', 'Not Available'], // Type of pantry
+    required: true
   },
   fireSafetyMeasures: {
     type: [String],
-    enum: ['Fire Extinguisher', 'Fire Sensors', 'Sprinklers', 'Fire Hose'], // Fire safety measures available
-    required: function () {
-      return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-    }
+    enum: ['Fire Extinguisher', 'Fire Sensors', 'Sprinklers', 'Fire Hose', 'None'], // Fire safety measures available
+    required: true,
+    default: 'None'
   },
   totalFloors: {
     type: Number,
-    required: function () {
-      return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-    }  // Total number of floors in the building
+    required: true
   },
   occupiedFloors: {
     type: [Number], // Array to specify the floors occupied by the office space
-    required: function () {
-      return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-    }
+    required: true
   },
   staircases: {
     type: Number,
@@ -755,16 +790,12 @@ const Office = new mongoose.Schema({
   lifts: {
     type: String,
     enum: ['Available', 'Not Available'], // Availability of lifts
-    required: function () {
-      return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-    }
+    required: true
   },
   parking: {
     type: String,
     enum: ['Available', 'Not Available'], // Availability of parking
-    required: function () {
-      return this.WhatKindOfOfficeIsit === 'Bare shell office space' || this.WhatKindOfOfficeIsit === 'Ready to move office space';
-    }
+    required: true
   },
   availabilityStatus: {
     type: String,
@@ -783,14 +814,8 @@ const Retail = new mongoose.Schema({
   },
   locationType: {
     type: String,
-    enum: ['Mall', 'Commercial Project', 'Residential Project', 'Retail Complex/Building', 'Market / High Street', 'Others'], // Locations for the retail space
+    enum: ['Mall', 'Commercial Project', 'Residential Project', 'Retail Complex/Building', 'Market / High Street'], // Locations for the retail space
     required: true
-  },
-  otherLocationName: {
-    type: String,
-    required: function () {
-      return this.locationType === 'Others'; // Required if location type is 'Others'
-    }
   },
   areaDetails: {
     carpetArea: {
@@ -853,55 +878,7 @@ const Retail = new mongoose.Schema({
   }
 })
 
-const CommercialPlotLand = new mongoose.Schema({
-  PlotLandType: {
-    type: String,
-    enum: ['Commercial Land/Inst. Land', 'Agricultural/Farm Land', 'Industrial Lands/Plots'], // Types of retail spaces
-    required: true
-  },
-  areaDetails: {
-    plotArea: {
-      type: Number,
-      required: true // Mandatory field
-    },
-    areaUnitForPlot: {
-      type: String,
-      enum: ['sq.ft', 'sq.yards', 'sq.m.', 'acres', 'marla', 'cents', 'bigha', 'kottah', 'kanal', 'grounds', 'ares', 'biswa', 'guntha', 'aankadam', 'hectares', 'rood', 'chataks', 'perch'],
-      required: true
-    },
-  },
-  lengthOfPlot: {
-    type: Number,
-    required: true // Length of the plot in feet
-  },
-  breadthOfPlot: {
-    type: Number,
-    required: true // Breadth of the plot in feet
-  },
-  widthOfFacingRoad: {
-    type: Number,
-    required: true // Width of the facing road in feet
-  },
-  numberOfOpenSides: {
-    type: Number,
-    enum: [1, 2, 3], // Number of open sides
-    required: true
-  },
-  constructionStatus: {
-    type: String,
-    enum: ['Yes', 'No'], // Indicates if any construction has been done
-    required: true
-  },
-  propertyFacing: {
-    type: String,
-    enum: ['North', 'South', 'East', 'West', 'North-East', 'North-West', 'South-East', 'South-West'], // Directions property is facing
-    required: true
-  },
-  possessionBy: {
-    type: Date,
-    required: true // Expected possession details
-  }
-})
+
 
 
 const Storage = new mongoose.Schema({
@@ -1017,7 +994,6 @@ const Hospitality = new mongoose.Schema({
   balconies: {
     type: Number,
     min: 0,
-    max: 10, // Assuming a maximum of 10 balconies
     required: true // Mandatory field for balcony count
   },
   areaDetails: {
@@ -1091,7 +1067,7 @@ const OthersProperties = new mongoose.Schema({
   },
   propertyOnFloor: {
     type: Number,
-   
+
   },
   availabilityStatus: {
     type: String,
@@ -1135,12 +1111,21 @@ const pricingSchema = new mongoose.Schema({
     type: Number, // Monthly rent amount
     required: function () { return this.type === 'Rent'; }
   },
+  securityDeposit: {
+    type: Number, // Monthly rent amount
+    required: function () { return this.type === 'Rent'; }
+  },
   salePrice: {
     type: Number, // Sale price of the property
     required: function () { return this.type === 'Sell'; }
   },
   pgPrice: {
     type: Number, // Price for paying guest accommodation
+    required: function () { return this.type === 'PG'; }
+  },
+  foodIncluded: {
+    type: Boolean, // Price for paying guest accommodation
+    default: false,
     required: function () { return this.type === 'PG'; }
   },
 });
@@ -1150,22 +1135,22 @@ const pricingSchema = new mongoose.Schema({
 
 const Property = mongoose.models.Property || mongoose.model('Property', PropertySchema);
 const Location = mongoose.models.PropertyLocation || mongoose.model('PropertyLocation', locationSchema);
-const FlatApartment = mongoose.models.FlatApartment || mongoose.model('FlatApartment', flatApartmentSchema);
 const Amenities = mongoose.models.Amenities || mongoose.model('Amenities', amenitiesSchema);
 const Pricing = mongoose.models.Pricing || mongoose.model('Pricing', pricingSchema);
 
-const HouseVilla = mongoose.models.HouseVilla || mongoose.model('HouseVilla', houseVilla);
+const FlatApartment = mongoose.models.FlatApartment || mongoose.model('FlatApartment', flatApartmentSchema);
+const HouseVilla = mongoose.models.IndependentHouseVilla || mongoose.model('IndependentHouseVilla', houseVilla);
 const office = mongoose.models.Office || mongoose.model('Office', Office);
-const independentOrBuilderFloor = mongoose.models.IndependentOrBuilderFloor || mongoose.model('IndependentOrBuilderFloor', IndependentOrBuilderFloor);
+const independentBuilderFloor = mongoose.models.IndependentBuilderFloor || mongoose.model('IndependentBuilderFloor', IndependentBuilderFloor);
 const StudioApartment = mongoose.models.StudioApartment || mongoose.model('StudioApartment', RkStudioApartment);
 const servicedApartment = mongoose.models.ServicedApartment || mongoose.model('ServicedApartment', ServicedApartment);
 const RetailShop = mongoose.models.RetailShop || mongoose.model('RetailShop', Retail);
 const Farmhouse = mongoose.models.Farmhouse || mongoose.model('Farmhouse', FarmhouseDetail);
-const PlotLand = mongoose.models.PlotLand || mongoose.model('PlotLand', LandPlot);
-const commercialPlotLand = mongoose.models.commercialPlotLand || mongoose.model('commercialPlotLand', CommercialPlotLand);
+const land = mongoose.models.Land || mongoose.model('Land', Land);
+const plot = mongoose.models.Plot || mongoose.model('Plot', Plot);
 const storage = mongoose.models.Storage || mongoose.model('Storage', Storage);
 const industry = mongoose.models.Industry || mongoose.model('Industry', Industry);
 const hospitality = mongoose.models.Hospitality || mongoose.model('Hospitality', Hospitality);
 const othersProperties = mongoose.models.OthersProperties || mongoose.model('OthersProperties', OthersProperties);
 
-export { Property, FlatApartment, HouseVilla, Location, StudioApartment, Amenities, RetailShop,office, Farmhouse, PlotLand, Pricing,independentOrBuilderFloor , servicedApartment,commercialPlotLand,storage,industry,hospitality,othersProperties};
+export { Property, FlatApartment, HouseVilla, Location, StudioApartment, Amenities, RetailShop, office, Farmhouse, plot, Pricing, independentBuilderFloor, servicedApartment, land, storage, industry, hospitality, othersProperties };

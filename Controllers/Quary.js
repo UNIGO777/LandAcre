@@ -73,9 +73,10 @@ const createQueryForProperty = async (req, res, next) => {
         const newQuery = new Query({
             user: userId,
             item: {
-                ItemId: propertyId,
+                ItemId: property._id,
                 Itemtype: 'Property'
             },
+            sellerId: property.sellerId
         });
 
         const savedQuery = await newQuery.save();
@@ -192,9 +193,10 @@ const createQueryForProject = async (req, res, next) => {
         const newQuery = new Query({
             user: userId,
             item: {
-                ItemId: projectId,
+                ItemId: project._id,
                 Itemtype: 'Project'
             },
+            sellerId: project.sellerId
         });
 
         const savedQuery = await newQuery.save();
@@ -264,6 +266,7 @@ const getPropertyQueries = async (req, res) => {
         const sellerId = req.user._id;
         const page = parseInt(req.query.page) || 1;
         const perPage = 20;
+        const status = req.query.status;
 
         const property = await Property.findById(id);
         if (!property) {
@@ -274,25 +277,49 @@ const getPropertyQueries = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized access to property queries' });
         }
 
-        const totalQueries = await Query.countDocuments({ 
+        // Build query object
+        let queryObj = {
             'item.ItemId': id,
             'item.Itemtype': 'Property'
-        });
+        };
+
+        // Add status filter if provided
+        if (status && status !== 'all') {
+            queryObj.status = status;
+        }
+
+        const totalQueries = await Query.countDocuments(queryObj);
         const totalPages = Math.ceil(totalQueries / perPage);
 
-        const queries = await Query.find({ 
-            'item.ItemId': id,
-            'item.Itemtype': 'Property'
-        })
+        const queries = await Query.find(queryObj)
             .sort({ createdAt: -1 })
             .skip((page - 1) * perPage)
             .limit(perPage)
-            .populate('user', 'firstName email phoneNumber');
+            .populate('user', 'firstName lastName email phoneNumber')
+            .lean();
+
+        // Process queries to populate property details
+        const populatedQueries = await Promise.all(queries.map(async (query) => {
+            if (query.item && query.item.ItemId) {
+                try {
+                    const property = await Property.findById(query.item.ItemId)
+                        .select('propertyTitle propertyType propertyMedia')
+                        .lean();
+                    if (property) {
+                        query.item.details = property;
+                    }
+                } catch (err) {
+                    console.error(`Error populating property details for query ${query._id}:`, err);
+                    query.item.details = null;
+                }
+            }
+            return query;
+        }));
 
         res.status(200).json({
             message: 'Property queries retrieved successfully',
             data: {
-                queries,
+                queries: populatedQueries,
                 pagination: {
                     totalQueries,
                     currentPage: page,
@@ -317,6 +344,7 @@ const getProjectQueries = async (req, res) => {
         const sellerId = req.user._id;
         const page = parseInt(req.query.page) || 1;
         const perPage = 20;
+        const status = req.query.status;
 
         const project = await Project.findById(id);
         if (!project) {
@@ -327,25 +355,49 @@ const getProjectQueries = async (req, res) => {
             return res.status(403).json({ message: 'Unauthorized access to project queries' });
         }
 
-        const totalQueries = await Query.countDocuments({ 
+        // Build query object
+        let queryObj = {
             'item.ItemId': id,
             'item.Itemtype': 'Project'
-        });
+        };
+
+        // Add status filter if provided
+        if (status && status !== 'all') {
+            queryObj.status = status;
+        }
+
+        const totalQueries = await Query.countDocuments(queryObj);
         const totalPages = Math.ceil(totalQueries / perPage);
 
-        const queries = await Query.find({ 
-            'item.ItemId': id,
-            'item.Itemtype': 'Project'
-        })
+        const queries = await Query.find(queryObj)
             .sort({ createdAt: -1 })
             .skip((page - 1) * perPage)
             .limit(perPage)
-            .populate('user', 'firstName email phoneNumber');
+            .populate('user', 'firstName lastName email phoneNumber')
+            .lean();
+
+        // Process queries to populate project details
+        const populatedQueries = await Promise.all(queries.map(async (query) => {
+            if (query.item && query.item.ItemId) {
+                try {
+                    const project = await Project.findById(query.item.ItemId)
+                        .select('projectName projectType images')
+                        .lean();
+                    if (project) {
+                        query.item.details = project;
+                    }
+                } catch (err) {
+                    console.error(`Error populating project details for query ${query._id}:`, err);
+                    query.item.details = null;
+                }
+            }
+            return query;
+        }));
 
         res.status(200).json({
             message: 'Project queries retrieved successfully',
             data: {
-                queries,
+                queries: populatedQueries,
                 pagination: {
                     totalQueries,
                     currentPage: page,
@@ -370,17 +422,10 @@ const getQueryDetail = async (req, res) => {
         const userId = req.user._id;
 
         const query = await Query.findById(id)
-            .populate({
-                path: 'propertyId',
-                select: 'sellerId',
-                match: { sellerId: userId }
-            })
-            .populate({
-                path: 'projectId',
-                select: 'sellerId',
-                match: { sellerId: userId }
-            })
-            .populate('userId', 'firstName lastName email phoneNumber');
+            .populate('user', 'firstName lastName email phoneNumber')
+            .lean();
+
+        
 
         if (!query) {
             return res.status(404).json({ message: 'Query not found' });
@@ -388,16 +433,36 @@ const getQueryDetail = async (req, res) => {
 
         // Check if user is either sender or recipient
         const isAuthorized = query.user._id.toString() === userId.toString() ||
-                            query.propertyId?.sellerId?.toString() === userId.toString() ||
-                            query.projectId?.sellerId?.toString() === userId.toString();
+                            query.sellerId.toString() === userId.toString();
 
         if (!isAuthorized) {
             return res.status(403).json({ message: 'Unauthorized access to query details' });
         }
 
+        // Populate item details based on type
+        if (query.item && query.item.ItemId) {
+            if (query.item.Itemtype === 'Property') {
+                const property = await Property.findById(query.item.ItemId)
+                    .select('propertyTitle propertyType description status isCommercial propertyMedia')
+                    .lean();
+                if (property) {
+                    query.item.details = property;
+                }
+            } else if (query.item.Itemtype === 'Project') {
+                const project = await Project.findById(query.item.ItemId)
+                    .select('projectName projectType location description amenities images specifications area status startDate completionDate priceRange')
+                    .lean();
+                if (project) {
+                    query.item.details = project;
+                }
+            }
+        }
+
+        await Query.findByIdAndUpdate(id, { status: 'seen' });
+
         res.status(200).json({
             message: 'Query details retrieved successfully',
-            data: query
+            data: {...query, status:'seen'}
         });
 
     } catch (error) {
@@ -412,27 +477,74 @@ const getQueryDetail = async (req, res) => {
 const getSellerQueries = async (req, res) => {
     try {
         const userId = req.user._id;
+        const page = parseInt(req.query.page) || 1;
+        const perPage = 20;
+        const itemType = req.query.itemType;
+        const status = req.query.status;
 
-        const queries = await Query.find()
-            .sort({ createdAt: -1 }) // Add sorting by createdAt in descending order
-            .populate({
-                path: 'item.ItemId',
-                select: 'title location',
-                match: { sellerId: userId },
-                options: { strictPopulate: false }, // Handle cases where document might not exist
-                refPath: 'item.Itemtype' // Use dynamic reference based on Itemtype
-            })
+        // Build query object
+        let queryObj = { sellerId: userId };
+        
+        // Add itemType filter if provided
+        if (itemType && itemType !== 'all') {
+            queryObj['item.Itemtype'] = itemType.charAt(0).toUpperCase() + itemType.slice(1);
+        }
+
+        // Add status filter if provided
+        if (status && status !== 'all') {
+            queryObj.status = status;
+        }
+
+        // Calculate total queries for pagination
+        const totalQueries = await Query.countDocuments(queryObj);
+        const totalPages = Math.ceil(totalQueries / perPage);
+
+        // Get paginated queries for this seller
+        const queries = await Query.find(queryObj)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * perPage)
+            .limit(perPage)
             .populate('user', 'firstName lastName email phoneNumber')
-            .exec();
+            .lean();
 
-        // Filter queries where seller is involved through populated item
-        const sellerQueries = queries.filter(query => 
-            query.item.ItemId // Only include queries where the item reference was successfully populated
-        );
+        // Process each query to populate the correct item based on type
+        const populatedQueries = await Promise.all(queries.map(async (query) => {
+            if (query.item && query.item.ItemId) {
+                try {
+                    if (query.item.Itemtype === 'Property') {
+                        const property = await Property.findById(query.item.ItemId)
+                            .select('propertyTitle propertyType propertyMedia')
+                            .lean();
+                        if (property) {
+                            query.item.details = property;
+                        }
+                    } else if (query.item.Itemtype === 'Project') {
+                        const project = await Project.findById(query.item.ItemId)
+                            .select('projectName projectType images')
+                            .lean();
+                        if (project) {
+                            query.item.details = project;
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Error populating item details for query ${query._id}:`, err);
+                    query.item.details = null; // Set details to null if item not found
+                }
+            }
+            return query;
+        }));
 
         res.status(200).json({
             message: 'Seller queries retrieved successfully',
-            data: sellerQueries
+            data: {
+                queries: populatedQueries,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalQueries,
+                    queriesPerPage: perPage
+                }
+            }
         });
 
     } catch (error) {

@@ -94,7 +94,7 @@ export const getActiveFeaturedItems = async (req, res) => {
         const { itemType, upcomming } = req.query;
         const now = new Date();
         
-        const isUpcomingRequested = upcomming == 'true' ;
+        const isUpcomingRequested = upcomming == 'true';
         
         // Build base query
         const query = { 
@@ -113,23 +113,37 @@ export const getActiveFeaturedItems = async (req, res) => {
         }
 
         const featuredItems = await FeaturedItem.find(query)
-            .populate({
+            .sort({ featuredDate: -1 });
+
+
+        const populatedItems = await Promise.all(featuredItems.map(async (item) => {
+            if (!item.itemId) return item;
+            
+            const populatedItem = await item.populate({
                 path: 'itemId',
-                // Add match condition for upcoming projects if requested
-                match: {status: 'active'},
+                match: { status: 'active' },
                 populate: itemType === "Property" ? [
                     { path: 'locationSchemaId', model: 'PropertyLocation' },
                     { path: 'pricingDetails', model: 'Pricing' }
                 ] : []
-            })
-            .sort({ featuredDate: -1 });
+            });
+            
+            return populatedItem;
+        }));
 
-        // Filter out null results from upcoming match condition
         
-        const filteredItems = featuredItems.filter(item => {
-            return item.itemId.status == 'active' && item.itemId !== null && 
-            (item.itemType !== 'Project' || item.itemId.isUpcomming === isUpcomingRequested)}
-        );
+
+        // Filter out null results and check status only if itemId exists
+        const filteredItems = populatedItems.filter(item => {
+            if (!item.itemId) return false;
+            
+            if (item.itemType === 'Project') {
+                return item.itemId.status === 'active' && 
+                       item.itemId.isUpcomming === isUpcomingRequested;
+            }
+            
+            return item.itemId.status === 'active';
+        });
 
         res.status(200).json({
             message: 'Active featured items retrieved successfully',

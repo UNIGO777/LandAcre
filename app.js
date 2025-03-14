@@ -60,7 +60,7 @@ app.use(async(req,res,next)=>{
         next();
       } catch (error) {
         console.error("Email transporter error:", error);
-        return res.status(500).json({ message: "Email service is unavailable" });
+        next()
       }
 });
 
@@ -75,9 +75,8 @@ app.use('/api/properties', Property)
 app.use('/api/quary', Quary)
 app.use('/api/projects', Project)
 app.use('/api/feedback', Feedback)
-app.use('/api/feedback', Feedback)
 app.use('/api/notifications', Notification)
-app.use('/api/feature', featured)
+app.use('/api/feature-items', featured)
 // app.use("/api/payments", paymentRoutes);
 
 // Root route

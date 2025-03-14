@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Property, FlatApartment, HouseVilla, Location, StudioApartment, Amenities, RetailShop, office, Farmhouse, PlotLand, Pricing, independentOrBuilderFloor, servicedApartment, commercialPlotLand, storage, industry, hospitality, othersProperties } from '../Models/Property.js';
+import { Property, FlatApartment, HouseVilla, Location, StudioApartment, Amenities, RetailShop, office, Farmhouse, plot, land, Pricing, independentBuilderFloor, servicedApartment,  storage, industry, hospitality, othersProperties } from '../Models/Property.js';
 import Seller from '../Models/Seller.js';
 import sendEmail from '../Nodemailer/Controller/Controller.js';
 import { userPropertyRequestTemplate, adminPropertyRequestNotificationTemplate } from '../Nodemailer/Tamplates/properties/propertyRequested.js'
@@ -7,17 +7,18 @@ import { adminPropertyDeletedNotificationTemplate, SellerPropertyDeletedTemplate
 import User from '../Models/User.js';
 import { propertyApprovalNotificationTemplate } from '../Nodemailer/Tamplates/properties/propertyApprovalNotificationTemplate.js';
 import createNotification from '../Hof/makeNotifiction.js';
+import { json } from 'express';
 
 // Middleware for creating property details
 const createPropertyDetails = async (req, res, next) => {
     try {
-        const { propertyType, propertyDetails } = req.body;
+        const { propertyType } = req.body;
+        
 
         let propertyDetailSchema;
         switch (propertyType) {
-            case 'Flat/Apartment':
+            case 'FlatApartment':
                 const flatApartmentDetails = { ...req.body };
-
 
                 // Validation checks for required fields
                 const requiredFields = ['floorNumber', 'totalFloors', 'bedrooms', 'bathrooms', 'carpetArea', 'areaUnitForCarpet', 'furnishing', 'reservedParking', 'availabilityStatus', 'propertyAge'];
@@ -26,7 +27,6 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Flat/Apartment` });
                     }
                 }
-
 
                 propertyDetailSchema = new FlatApartment({
                     floorNumber: flatApartmentDetails.floorNumber,
@@ -51,7 +51,7 @@ const createPropertyDetails = async (req, res, next) => {
                 });
 
                 break;
-            case 'Independent House/Villa':
+            case 'IndependentHouseVilla':
                 const houseVillaDetails = { ...req.body };
 
                 // Validation checks for required fields
@@ -77,13 +77,13 @@ const createPropertyDetails = async (req, res, next) => {
                     otherRooms: houseVillaDetails.otherRooms,
                     furnishing: houseVillaDetails.furnishing,
                     furnishingItems: houseVillaDetails.furnishingItems,
-                    reservedParking: builderFloorDetails.reservedParking,
+                    reservedParking: houseVillaDetails.reservedParking, // Fixed typo here
                     totalFloors: houseVillaDetails.totalFloors,
                     availabilityStatus: houseVillaDetails.availabilityStatus,
                     propertyAge: houseVillaDetails.propertyAge
                 });
                 break;
-            case 'Builder Floor':
+            case 'IndependentBuilderFloor':
                 const builderFloorDetails = { ...req.body };
 
                 // Validation checks for required fields
@@ -94,7 +94,21 @@ const createPropertyDetails = async (req, res, next) => {
                     }
                 }
 
-                propertyDetailSchema = new IndependentOrBuilderFloor({
+                
+
+                if(builderFloorDetails.reservedParking === undefined){
+                    builderFloorDetails.reservedParking = 'none';
+                }else{
+                    if(builderFloorDetails.reservedParking.toLowerCase() === 'covered'){
+                        builderFloorDetails.reservedParking = 'Covered';
+                    }else if(builderFloorDetails.reservedParking.toLowerCase() === 'open'){
+                        builderFloorDetails.reservedParking = 'Open';
+                    }else{
+                        builderFloorDetails.reservedParking = 'none';
+                    }
+                }
+
+                propertyDetailSchema = new independentBuilderFloor({
                     floorType: builderFloorDetails.floorType,
                     totalFloors: builderFloorDetails.totalFloors,
                     propertyOnFloor: builderFloorDetails.propertyOnFloor,
@@ -116,32 +130,65 @@ const createPropertyDetails = async (req, res, next) => {
                     availabilityStatus: builderFloorDetails.availabilityStatus
                 });
                 break;
-            case 'Plot/Land':
-                const plotLandDetails = { ...req.body };
-
-                // Validation checks for required fields
-                const plotLandRequiredFields = ['plotArea', 'areaUnitForPlot', 'boundaryWall', 'openSides', 'constructionDone', 'possessionDate'];
-                for (const field of plotLandRequiredFields) {
-                    if (!plotLandDetails[field]) {
-                        return res.status(400).json({ error: `${field} is required for Plot/Land` });
+            case 'Land':
+                const landDetails = { ...req.body };
+                const landRequiredFields = ['plotArea', 'areaUnitForPlot', 'boundaryWall', 'openSides', 'constructionDone', 'possessionDate'];
+                for (const field of landRequiredFields) {
+                    if (!landDetails[field]) {
+                        return res.status(400).json({ error: `${field} is required for Land` });
                     }
                 }
+                if (req.body.isCommercial && !landDetails.commercialType) {
+                    return res.status(400).json({ error: 'commercialType is required for Commercial Land' });
 
-                propertyDetailSchema = new PlotLand({
+                }
+
+                const parsedPossessionDate = new Date(JSON.parse(landDetails.possessionDate));
+                propertyDetailSchema = new land({
+                    landType: req.body.isCommercial ? 'Commercial' : 'Residential',
+                    commercialType: landDetails.commercialType,
                     areaDetails: {
-                        plotArea: plotLandDetails.plotArea,
-                        areaUnitForPlot: plotLandDetails.areaUnitForPlot
+                        plotArea: landDetails.plotArea,
+                        areaUnitForPlot: landDetails.areaUnitForPlot
                     },
-                    lengthOfPlot: plotLandDetails.lengthOfPlot,
-                    breadthOfPlot: plotLandDetails.breadthOfPlot,
-                    floorsAllowed: plotLandDetails.floorsAllowed,
-                    boundaryWall: plotLandDetails.boundaryWall,
-                    openSides: plotLandDetails.openSides,
-                    constructionDone: plotLandDetails.constructionDone,
-                    possessionDate: plotLandDetails.possessionDate
+                    lengthOfPlot: landDetails.lengthOfPlot,
+                    breadthOfPlot: landDetails.breadthOfPlot,
+                    floorsAllowed: landDetails.floorsAllowed,
+                    boundaryWall: landDetails.boundaryWall,
+                    openSides: landDetails.openSides,
+                    constructionDone: landDetails.constructionDone,
+                    possessionDate: parsedPossessionDate
                 });
                 break;
-            case '1 RK/Studio Apartment':
+
+            case 'Plot':
+                const plotDetails = { ...req.body };
+                const plotRequiredFields = [ 'plotArea', 'areaUnitForPlot', 'boundaryWall', 'openSides', 'constructionDone', 'possessionDate'];
+                
+                if (plotDetails.isCommercial && !plotDetails.commercialType) {
+                    return res.status(400).json({ error: 'commercialType is required for Commercial Plot' });
+                }
+                // Parse the possessionDate string properly by removing extra quotes
+                // Parse the possession date string directly without JSON.parse
+                const updatedparsedPossessionDate = new Date(plotDetails.possessionDate);
+
+                propertyDetailSchema = new plot({
+                    plotType: plotDetails.isCommercial ? 'Commercial' : 'Residential',
+                    commercialType: plotDetails.commercialType,
+                    areaDetails: {
+                        plotArea: plotDetails.plotArea,
+                        areaUnitForPlot: plotDetails.areaUnitForPlot
+                    },
+                    lengthOfPlot: plotDetails.lengthOfPlot,
+                    breadthOfPlot: plotDetails.breadthOfPlot,
+                    floorsAllowed: plotDetails.floorsAllowed,
+                    boundaryWall: plotDetails.boundaryWall,
+                    openSides: plotDetails.openSides,
+                    constructionDone: plotDetails.constructionDone,
+                    possessionDate: updatedparsedPossessionDate
+                });
+                break;
+            case 'RKStudioApartment':
                 const studioApartmentDetails = { ...req.body };
                 const studioApartmentRequiredFields = ['bedrooms', 'bathrooms', 'carpetArea', 'areaUnitForCarpet', 'furnishing', 'availabilityStatus'];
                 for (const field of studioApartmentRequiredFields) {
@@ -170,7 +217,7 @@ const createPropertyDetails = async (req, res, next) => {
                     propertyAge: studioApartmentDetails.propertyAge
                 });
                 break;
-            case 'Serviced Apartment':
+            case 'ServicedApartment':
                 const servicedApartmentDetails = { ...req.body };
                 const servicedApartmentRequiredFields = ['bedrooms', 'bathrooms', 'carpetArea', 'areaUnitForCarpet', 'furnishing', 'availabilityStatus', 'reservedParking', 'propertyAge', 'totalFloors', 'floorNumber'];
                 for (const field of servicedApartmentRequiredFields) {
@@ -178,7 +225,7 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Serviced Apartment` });
                     }
                 }
-                propertyDetailSchema = new ServicedApartment({
+                propertyDetailSchema = new servicedApartment({
                     bedrooms: servicedApartmentDetails.bedrooms,
                     bathrooms: servicedApartmentDetails.bathrooms,
                     balconies: servicedApartmentDetails.balconies,
@@ -208,7 +255,7 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Farmhouse` });
                     }
                 }
-                propertyDetailSchema = new FarmhouseDetail({
+                propertyDetailSchema = new Farmhouse({
                     bedrooms: farmhouseDetails.bedrooms,
                     bathrooms: farmhouseDetails.bathrooms,
                     balconies: farmhouseDetails.balconies || 0,
@@ -233,28 +280,8 @@ const createPropertyDetails = async (req, res, next) => {
             case 'Office':
                 const officeDetails = { ...req.body };
                 const officeRequiredFields = ['WhatKindOfOfficeIsit', 'carpetArea', 'areaUnitForCarpet', 'availabilityStatus', 'totalFloors'];
-                for (const field of officeRequiredFields) {
-                    if (!officeDetails[field]) {
-                        return res.status(400).json({ error: `${field} is required for Office` });
-                    }
-                }
-                if (officeDetails.WhatKindOfOfficeIsit === 'Bare shell office space') {
-                    const bareShellRequired = ['constructionStatus', 'doorsConstructed', 'officeSetup.minSeats', 'officeSetup.cabins', 'officeSetup.meetingRooms'];
-                    for (const field of bareShellRequired) {
-                        if (!officeDetails[field] && !officeDetails[field.split('.')[1]]) {
-                            return res.status(400).json({ error: `${field} is required for Bare shell offices` });
-                        }
-                    }
-                }
-                if (officeDetails.WhatKindOfOfficeIsit === 'Bare shell office space' || officeDetails.WhatKindOfOfficeIsit === 'Ready to move office space') {
-                    const officeSetupRequired = ['minSeats', 'cabins', 'meetingRooms'];
-                    for (const field of officeSetupRequired) {
-                        if (!officeDetails.officeSetup?.[field]) {
-                            return res.status(400).json({ error: `officeSetup.${field} is required for this office type` });
-                        }
-                    }
-                }
-                propertyDetailSchema = new Office({
+                
+                propertyDetailSchema = new office({
                     WhatKindOfOfficeIsit: officeDetails.WhatKindOfOfficeIsit,
                     areaDetails: {
                         carpetArea: officeDetails.carpetArea,
@@ -264,7 +291,14 @@ const createPropertyDetails = async (req, res, next) => {
                     },
                     constructionStatus: officeDetails.constructionStatus,
                     doorsConstructed: officeDetails.doorsConstructed,
-                    officeSetup: officeDetails.officeSetup,
+                    minSeats: officeDetails.minSeats,
+                    maxSeats: officeDetails.maxSeats,
+                    cabins: officeDetails.cabins,
+                    meetingRooms: officeDetails.meetingRooms,
+                    washrooms: officeDetails.washrooms,
+                    conferenceRoom: officeDetails.conferenceRoom,
+                    receptionArea: officeDetails.receptionArea,
+                    pantryType: officeDetails.pantryType,
                     fireSafetyMeasures: officeDetails.fireSafetyMeasures,
                     totalFloors: officeDetails.totalFloors,
                     occupiedFloors: officeDetails.occupiedFloors,
@@ -283,13 +317,9 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Retail` });
                     }
                 }
-                if (retailDetails.locationType === 'Others' && !retailDetails.otherLocationName) {
-                    return res.status(400).json({ error: 'otherLocationName is required when locationType is Others' });
-                }
-                propertyDetailSchema = new Retail({
+                propertyDetailSchema = new RetailShop({
                     retailType: retailDetails.retailType,
                     locationType: retailDetails.locationType,
-                    otherLocationName: retailDetails.otherLocationName,
                     areaDetails: {
                         carpetArea: retailDetails.carpetArea,
                         plotArea: retailDetails.plotArea,
@@ -308,29 +338,6 @@ const createPropertyDetails = async (req, res, next) => {
                     suitableForBusinessTypes: retailDetails.suitableForBusinessTypes
                 });
                 break;
-            case 'Comercial Plot/Land':
-                const commercialPlotLandDetails = { ...req.body };
-                const commercialPlotLandRequiredFields = ['PlotLandType', 'plotArea', 'areaUnitForPlot', 'lengthOfPlot', 'breadthOfPlot', 'widthOfFacingRoad', 'numberOfOpenSides', 'constructionStatus', 'propertyFacing', 'possessionBy'];
-                for (const field of commercialPlotLandRequiredFields) {
-                    if (!commercialPlotLandDetails[field]) {
-                        return res.status(400).json({ error: `${field} is required for Comercial Plot/Land` });
-                    }
-                }
-                propertyDetailSchema = new CommercialPlotLand({
-                    PlotLandType: commercialPlotLandDetails.PlotLandType,
-                    areaDetails: {
-                        plotArea: commercialPlotLandDetails.plotArea,
-                        areaUnitForPlot: commercialPlotLandDetails.areaUnitForPlot
-                    },
-                    lengthOfPlot: commercialPlotLandDetails.lengthOfPlot,
-                    breadthOfPlot: commercialPlotLandDetails.breadthOfPlot,
-                    widthOfFacingRoad: commercialPlotLandDetails.widthOfFacingRoad,
-                    numberOfOpenSides: commercialPlotLandDetails.numberOfOpenSides,
-                    constructionStatus: commercialPlotLandDetails.constructionStatus,
-                    propertyFacing: commercialPlotLandDetails.propertyFacing,
-                    possessionBy: commercialPlotLandDetails.possessionBy
-                });
-                break;
             case 'Storage':
                 const storageDetails = { ...req.body };
                 const storageRequiredFields = ['StorageType', 'plotArea', 'areaUnitForPlot', 'availabilityStatus'];
@@ -339,7 +346,7 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Storage` });
                     }
                 }
-                propertyDetailSchema = new Storage({
+                propertyDetailSchema = new storage({
                     StorageType: storageDetails.StorageType,
                     areaDetails: {
                         carpetArea: storageDetails.carpetArea,
@@ -361,7 +368,7 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Industry` });
                     }
                 }
-                propertyDetailSchema = new Industry({
+                propertyDetailSchema = new industry({
                     IndustryType: industryDetails.IndustryType,
                     areaDetails: {
                         carpetArea: industryDetails.carpetArea,
@@ -383,7 +390,7 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Hospitality` });
                     }
                 }
-                propertyDetailSchema = new Hospitality({
+                propertyDetailSchema = new hospitality({
                     HospitalityType: hospitalityDetails.HospitalityType,
                     totalRooms: hospitalityDetails.totalRooms,
                     washrooms: hospitalityDetails.washrooms,
@@ -411,7 +418,7 @@ const createPropertyDetails = async (req, res, next) => {
                         return res.status(400).json({ error: `${field} is required for Other Properties` });
                     }
                 }
-                propertyDetailSchema = new OthersProperties({
+                propertyDetailSchema = new othersProperties({
                     areaDetails: {
                         plotArea: otherPropertyDetails.plotArea,
                         areaUnitForPlot: otherPropertyDetails.areaUnitForPlot
@@ -429,17 +436,19 @@ const createPropertyDetails = async (req, res, next) => {
             refId: propertyDetailSchema._id,
             refType: (() => {
                 switch (propertyType) {
-                    case 'Flat/Apartment':
+                    case 'FlatApartment':
                         return 'FlatApartment';
-                    case 'Independent House/Villa':
-                        return 'HouseVilla';
-                    case 'Independent/Builder Floor':
-                        return 'IndependentOrBuilderFloor';
-                    case 'Plot/Land':
-                        return 'PlotLand';
-                    case '1 RK/Studio Apartment':
+                    case 'IndependentHouseVilla':
+                        return 'IndependentHouseVilla';
+                    case 'IndependentBuilderFloor':
+                        return 'IndependentBuilderFloor';
+                    case 'Land':
+                        return 'Land';
+                    case 'Plot':
+                        return 'Plot';
+                    case 'RKStudioApartment':
                         return 'StudioApartment';
-                    case 'Serviced Apartment':
+                    case 'ServicedApartment':
                         return 'ServicedApartment';
                     case 'Farmhouse':
                         return 'Farmhouse';
@@ -447,8 +456,6 @@ const createPropertyDetails = async (req, res, next) => {
                         return 'Office';
                     case 'Retail':
                         return 'RetailShop';
-                    case 'Comercial Plot/Land':
-                        return 'commercialPlotLand';
                     case 'Storage':
                         return 'Storage';
                     case 'Industry':
@@ -456,13 +463,14 @@ const createPropertyDetails = async (req, res, next) => {
                     case 'Hospitality':
                         return 'Hospitality';
                     case 'others':
-                        return 'othersProperties';
+                        return 'OthersProperties';
                 }
             })()
         };
         next();
     } catch (error) {
         res.status(500).json({ error: error.message });
+
     }
 };
 
@@ -471,14 +479,10 @@ const createLocationDetails = async (req, res, next) => {
     try {
         const { city, locality } = req.body;
 
-
-
         // Validation checks for required fields
         if (!city || !locality) {
             return res.status(400).json({ error: 'City and Locality are required for Location' });
         }
-
-
 
         const locationDetails = new Location({
             state: req.body.state,
@@ -500,34 +504,32 @@ const createLocationDetails = async (req, res, next) => {
 // Middleware for creating pricing details
 const createPricingDetails = async (req, res, next) => {
     try {
-        const { transactionType, rent, salePrice, pgPrice, pricePerAcre, pricePerSqFt, additionalMeasurements } = req.body;
+        const { transactionType, rent, salePrice, pgPrice, securityDeposit } = req.body;
         // Validation checks for required fields
 
         if (!transactionType) {
             return res.status(400).json({ error: 'Transaction Type is required' });
         }
 
-
-        if (transactionType === 'Rent' && !rent) {
-            return res.status(400).json({ error: 'Rent is required for Pricing Type Rent' });
+        if (transactionType === 'Rent' && (!rent || !securityDeposit)) {
+            return res.status(400).json({ error: 'Rent and Security Deposit are required for Pricing Type Rent' });
         }
 
-        if (transactionType === 'Sell' && (!salePrice || !pricePerAcre || !pricePerSqFt)) {
-            return res.status(400).json({ error: 'Sale Price, Price Per Acre, and Price Per SqFt are required for Pricing Type Sell' });
+        if (transactionType === 'Sell' && !salePrice) {
+            return res.status(400).json({ error: 'Sale Price required for Pricing Type Sell' });
         }
 
         if (transactionType === 'PG' && !pgPrice) {
             return res.status(400).json({ error: 'PG Price is required for Pricing Type PG' });
         }
 
-
         const pricingDetails = new Pricing({
-            type: req.body.transactionType,
-            rent: req.body.rentPrice,
-            salePrice: req.body.salePrice,
-            pgPrice: req.body.pgPrice,
-            pricePerAcre: req.body.pricePerAcre,
-            pricePerSqFt: req.body.pricePerSqFt,
+            type: transactionType,
+            rent: rent,
+            securityDeposit: securityDeposit,
+            salePrice: salePrice,
+            pgPrice: pgPrice,
+            foodIncluded: req.body.foodIncluded || false
         });
 
         await pricingDetails.save();
@@ -541,11 +543,12 @@ const createPricingDetails = async (req, res, next) => {
 // Middleware for creating amenities details
 const createAmenitiesDetails = async (req, res, next) => {
     try {
-        const amenitiesDetails = new Amenities(req.body.amenities);
+        const amenitiesDetails = new Amenities(JSON.parse(req.body.amenities));
         await amenitiesDetails.save();
         req.body.amenitiesSchemaId = {
             refId: amenitiesDetails._id,
         };
+        
         next();
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -557,11 +560,11 @@ const createAmenitiesDetails = async (req, res, next) => {
 const createProperty = async (req, res) => {
     try {
         const { propertyType } = req.body;
+        console.log(req.body)
 
         const validPropertyTypes = [
-            'Flat/Apartment', 'Independent House/Villa', 'Builder Floor', 'Plot/Land',
-            '1 RK/Studio Apartment', 'Serviced Apartment', 'Farmhouse', 'Office', 'Retail',
-            'Comercial Plot/Land', 'Storage', 'Industry', 'Hospitality', 'others'
+            'FlatApartment', 'IndependentHouseVilla', 'IndependentBuilderFloor', 'Plot', 'Land',
+            'RKStudioApartment', 'ServicedApartment', 'Farmhouse', 'Office', 'Retail',  'Storage', 'Industry', 'Hospitality', 'others'
         ];
 
         if (!validPropertyTypes.includes(propertyType)) {
@@ -572,6 +575,7 @@ const createProperty = async (req, res) => {
             await createAmenitiesDetails(req, res, async () => {
                 await createPricingDetails(req, res, async () => {
                     await createPropertyDetails(req, res, async () => {
+                        console.log(req.body,"kasjdhf")
                         const {
                             transactionType, propertyTitle, description, locationSchemaId,
                             propertyDetailSchemaId, amenitiesSchemaId, pricingDetails,
@@ -597,10 +601,6 @@ const createProperty = async (req, res) => {
                             return res.status(400).json({ error: 'All required fields must be provided' });
                         }
 
-                        if ((transactionType === 'Rent' || transactionType === 'PG') && !availableDate) {
-                            return res.status(400).json({ error: 'Available Date is required for Rent or PG transaction type' });
-                        }
-
                         if (transactionType === 'Rent' && !willingToRentOut) {
                             return res.status(400).json({ error: 'Willing to Rent Out is required for Rent transaction type' });
                         }
@@ -608,6 +608,15 @@ const createProperty = async (req, res) => {
                         if (transactionType === 'PG' && (!availableFor || !suitableFor)) {
                             return res.status(400).json({ error: 'Available For and Suitable For are required for PG transaction type' });
                         }
+
+
+                        console.log(req.files,"req.files")
+                        
+                        
+
+
+                        // Parse the date string properly by removing extra quotes
+                        const availableFromDate = new Date(JSON.parse(req.body.availableFrom));
 
                         const property = new Property({
                             propertyType,
@@ -619,7 +628,7 @@ const createProperty = async (req, res) => {
                             amenitiesSchemaId: req.body.amenitiesSchemaId,
                             pricingDetails: req.body.pricingDetails,
                             sellerId: req.user._id,
-                            availableFrom: req.body.availableFrom,
+                            availableFrom: availableFromDate,
                             facingDirection: req.body.facingDirection,
                             propertyMedia: {
                                 photos: req.files.photos ? req.files.photos.map(file => file.path.split('/').pop()) : [],
@@ -638,7 +647,7 @@ const createProperty = async (req, res) => {
                         await seller.save();
 
                         const Admin = await User.findOne({ role: 'admin' });
-                        
+
                         // Create notification for seller
                         await createNotification({
                             userType: 'Seller',
@@ -689,7 +698,7 @@ const createProperty = async (req, res) => {
 
 const markPropertyAsSold = async (req, res) => {
     try {
-        
+
         const existingProperty = await Property.findOne({
             _id: req.params.id,
             status: { $in: ['active', 'requested'] }
@@ -719,7 +728,7 @@ const markPropertyAsSold = async (req, res) => {
             return res.status(404).json({ error: 'Property not found or the property is blocked so it can not mark as sold' });
         }
 
-        
+
 
         res.status(200).json(property);
     } catch (error) {
@@ -733,45 +742,67 @@ const getProperty = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // ✅ Validate ObjectId format
-        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ error: 'Invalid property ID' });
         }
 
-        // ✅ Fetch property with standard population
+        // Fetch property with standard population
         let property = await Property.findById(id)
             .select('-__v -createdAt -updatedAt')
             .populate('locationSchemaId', '-_id -createdAt -updatedAt')
             .populate('pricingDetails', '-_id -createdAt -updatedAt')
-            .populate('sellerId', 'sellerDetails.profilePicture sellerDetails.name sellerType -projects -sellingProperties -password -__v')
-            .lean(); // Convert to plain object
+            .populate({
+                path: 'sellerId',
+                select: 'sellerDetails.profilePicture sellerDetails.name sellerType'
+            })
+            .lean();
 
         if (!property) {
             return res.status(404).json({ error: 'Property not found' });
         }
 
-        // ✅ Dynamically populate `propertyDetailSchemaId.refId` based on `refType`
-        if (mongoose.models[property.propertyDetailSchemaId.refType]) {
-            const DynamicModel = mongoose.model(property.propertyDetailSchemaId.refType);
-            property.propertyDetailSchemaId.refId = await DynamicModel.findById(property.propertyDetailSchemaId.refId)
-                .select('-_id -createdAt -updatedAt')
-                .lean();
-        } else {
-            console.warn(`Model "${property.propertyDetailSchemaId.refType}" is not registered.`)
+        // Dynamically populate propertyDetailSchemaId
+        if (property.propertyDetailSchemaId && property.propertyDetailSchemaId.refType) {
+            try {
+                const modelName = property.propertyDetailSchemaId.refType;
+                if (mongoose.models[modelName]) {
+                    const DynamicModel = mongoose.model(modelName);
+                    const details = await DynamicModel.findById(property.propertyDetailSchemaId.refId)
+                        .select('-_id -createdAt -updatedAt')
+                        .lean();
+                    
+                    if (details) {
+                        property.propertyDetailSchemaId.refId = details;
+                    }
+                }
+            } catch (err) {
+                console.error(`Error populating property details: ${err.message}`);
             }
+        }
 
-        
-        // ✅ Populate `amenitiesSchemaId.refId`
-        if (property.amenitiesSchemaId?.refId) {
-            property.amenitiesSchemaId.refId = await Amenities.findById(property.amenitiesSchemaId.refId)
-                .select('-_id -createdAt -updatedAt')
-                .lean();
+        // Populate amenities if they exist
+        if (property.amenitiesSchemaId && property.amenitiesSchemaId.refId) {
+            try {
+                const amenities = await Amenities.findById(property.amenitiesSchemaId.refId)
+                    .select('-_id -createdAt -updatedAt')
+                    .lean();
+                
+                if (amenities) {
+                    property.amenitiesSchemaId.refId = amenities;
+                }
+            } catch (err) {
+                console.error(`Error populating amenities: ${err.message}`);
+            }
         }
 
         res.status(200).json(property);
     } catch (error) {
         console.error('Error fetching property:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message 
+        });
     }
 };
 
@@ -790,17 +821,17 @@ const deletePropertyBySeller = async (req, res) => {
             return res.status(404).json({ error: 'Seller not found' });
         }
 
-        
+
 
         // Verify seller ownership
-        
+
         if (req.user._id.toString() !== property.sellerId.toString()) {
             return res.status(403).json({ error: 'Unauthorized to delete this property' });
         }
 
 
 
-        if(property.status === 'blocked'){
+        if (property.status === 'blocked') {
             return res.status(400).json({ error: 'property is alrady deleted' });
         }
 
@@ -823,10 +854,10 @@ const deletePropertyBySeller = async (req, res) => {
             message: `Your property ${property.propertyTitle} (${property._id}) has been successfully deleted by you`
         });
 
-        
+
 
         // Notify seller via email
-        
+
         await sendEmail(
             req.userDetails.sellerDetails.email,
             "Property Deletion Confirmation",
@@ -850,18 +881,18 @@ const deletePropertyByAdmin = async (req, res) => {
             return res.status(404).json({ error: 'Property not found' });
         }
 
-        
+
 
         // Verify admin privileges
         const Admin = await User.findById(req.user._id)
 
-       
 
-        if(Admin.role !== 'admin'){
+
+        if (Admin.role !== 'admin') {
             return res.status(400).json({ error: 'You are not a admin' });
         }
 
-        if(property.status === 'blocked'){
+        if (property.status === 'blocked') {
             return res.status(400).json({ error: 'property is alrady deleted' });
         }
 
@@ -900,7 +931,7 @@ const deletePropertyByAdmin = async (req, res) => {
                 _id: property._id
             })
         );
-       
+
         res.status(200).json({ message: 'Property blocked successfully and notifications sent' });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -912,7 +943,18 @@ const deletePropertyByAdmin = async (req, res) => {
 
 const searchProperties = async (req, res) => {
     try {
-        const { propertyType, transactionType, minPrice, maxPrice, locality,city,  page = 1, state } = req.query;
+        let { propertyType, transactionType, minPrice, maxPrice, locality, city, page = 1, state } = req.query;
+
+
+
+        if (propertyType == 'Flat-Apartment') {
+            propertyType = 'Flat/Apartment'
+        }
+        if (transactionType == 'Buy') {
+            transactionType = 'Sell'
+        }
+
+        
 
         // ✅ Get all active properties first
         let properties = await Property.find({ status: 'active' })
@@ -921,16 +963,12 @@ const searchProperties = async (req, res) => {
                 { path: 'pricingDetails', select: '-_id -createdAt -updatedAt' }
             ])
             .select('-__v -sellerId -status -createdAt -updatedAt')
-            .lean(); // ✅ Convert Mongoose documents to plain JS objects
-
-            
-            
+            .lean();
 
         // ✅ Apply filters after fetching
         properties = properties.filter(property => {
             const matchesPropertyType = !propertyType || property.propertyType === propertyType;
             const matchesTransactionType = !transactionType || property.transactionType === transactionType;
-            
 
             const matchesPrice = (() => {
                 if (!minPrice && !maxPrice) return true;
@@ -946,14 +984,17 @@ const searchProperties = async (req, res) => {
                     (!maxPrice || price <= parseFloat(maxPrice))
                 );
             })();
-            
 
             const matchesLocation =
                 (!city && !locality) ||
                 (property.locationSchemaId &&
                     (state && property.locationSchemaId.state?.match(new RegExp(state, 'i')) ||
-                     city && property.locationSchemaId.city?.match(new RegExp(city, 'i')) ||
-                     locality && property.locationSchemaId.locality?.match(new RegExp(locality, 'i'))));
+                        city && property.locationSchemaId.city?.match(new RegExp(city, 'i')) ||
+                        locality && property.locationSchemaId.locality?.match(new RegExp(locality, 'i'))));
+            
+            
+
+            
 
             return (
                 matchesPropertyType &&
@@ -963,7 +1004,270 @@ const searchProperties = async (req, res) => {
             );
         });
 
+        for (const property of properties) {
+            if (property.propertyDetailSchemaId?.refType) {
+                if (mongoose.models[property.propertyDetailSchemaId.refType]) {
+                    const DynamicModel = mongoose.model(property.propertyDetailSchemaId.refType);
+                    property.propertyDetailSchemaId.refId = await DynamicModel.findById(property.propertyDetailSchemaId.refId)
+                        .select('-_id -createdAt -updatedAt')
+                        .lean();
+                } else {
+                    console.warn(`Model "${property.propertyDetailSchemaId.refType}" not registered`);
+                }
+            }
+        }
+
         // ✅ Pagination applied after filtering
+        const limit = 20;
+        const total = properties.length;
+
+
+        const totalPages = Math.ceil(total / limit);
+        const paginatedProperties = properties.slice((page - 1) * limit, page * limit);
+
+        res.status(200).json({
+            data: paginatedProperties,
+            totalPages,
+            currentPage: parseInt(page),
+            totalRecords: total
+        });
+
+    } catch (error) {
+        console.error('Error searching properties:', error);
+        res.status(500).json({
+            error: error.message,
+            message: 'Error searching properties'
+        });
+    }
+};
+
+
+const searchPropertiesByAdmin = async (req, res) => {
+    try {
+        let { propertyType, transactionType, minPrice, maxPrice, locality, city, page = 1, state, status, searchQuery } = req.query;
+
+        if (propertyType == 'Flat-Apartment') {
+            propertyType = 'FlatApartment'
+        }
+        if (transactionType == 'Buy') {
+            transactionType = 'Sell'
+        }
+
+        // Build base query
+        let query = {};
+
+        // Add status filter if provided
+        if (status && ['active', 'sold', 'blocked', 'requested'].includes(status)) {
+            query.status = status;
+        }
+
+        // Get properties with seller info
+        let properties = await Property.find(query)
+            .populate([
+                { path: 'locationSchemaId', select: '-_id -createdAt -updatedAt' },
+                { path: 'pricingDetails', select: '-_id -createdAt -updatedAt' },
+                { 
+                    path: 'sellerId',
+                    select: 'sellerDetails.name sellerDetails.email -_id'
+                }
+            ])
+            .select('-__v -createdAt -updatedAt')
+            .lean();
+
+        // Helper function for Levenshtein Distance calculation
+        function calculateLevenshteinDistance(str1, str2) {
+            if (Math.abs(str1.length - str2.length) > 3) return Infinity;
+            
+            const track = Array(str2.length + 1).fill(null).map(() =>
+                Array(str1.length + 1).fill(null));
+            
+            for (let i = 0; i <= str1.length; i++) track[0][i] = i;
+            for (let j = 0; j <= str2.length; j++) track[j][0] = j;
+            
+            for (let j = 1; j <= str2.length; j++) {
+                for (let i = 1; i <= str1.length; i++) {
+                    const indicator = str1[i - 1].toLowerCase() === str2[j - 1].toLowerCase() ? 0 : 1;
+                    track[j][i] = Math.min(
+                        track[j][i - 1] + 1,
+                        track[j - 1][i] + 1,
+                        track[j - 1][i - 1] + indicator
+                    );
+                }
+            }
+            
+            return track[str2.length][str1.length];
+        }
+
+        // Calculate relevance scores and filter properties
+        properties = properties.map(property => {
+            const matchesPropertyType = !propertyType || property.propertyType === propertyType;
+            const matchesTransactionType = !transactionType || property.transactionType === transactionType;
+            
+            // Price matching
+            const matchesPrice = (() => {
+                if (!minPrice && !maxPrice) return true;
+                const priceField = {
+                    'Rent': 'rent',
+                    'Sell': 'salePrice',
+                    'PG': 'pgPrice'
+                }[transactionType] || 'rent';
+
+                const price = property.pricingDetails?.[priceField];
+                return (
+                    (!minPrice || price >= parseFloat(minPrice)) &&
+                    (!maxPrice || price <= parseFloat(maxPrice))
+                );
+            })();
+
+            // Location matching with scoring
+            let locationScore = 0;
+            let locationMatches = false;
+            if (property.locationSchemaId) {
+                if (state && property.locationSchemaId.state?.match(new RegExp(state, 'i'))) {
+                    locationScore += 1;
+                    locationMatches = true;
+                }
+                if (city && property.locationSchemaId.city?.match(new RegExp(city, 'i'))) {
+                    locationScore += 2;
+                    locationMatches = true;
+                }
+                if (locality && property.locationSchemaId.locality?.match(new RegExp(locality, 'i'))) {
+                    locationScore += 3;
+                    locationMatches = true;
+                }
+            }
+            const matchesLocation = !city && !locality && !state || locationMatches;
+
+            // Search query matching with enhanced scoring
+            let searchScore = 0;
+            if (searchQuery) {
+                const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/);
+                
+                // Title matching with enhanced scoring
+                if (property.propertyTitle) {
+                    const titleWords = property.propertyTitle.toLowerCase().trim().split(/\s+/);
+                    const titleFullText = property.propertyTitle.toLowerCase();
+                    
+                    // Full phrase match in title (highest weight)
+                    if (titleFullText.includes(searchQuery.toLowerCase())) {
+                        searchScore += 15;
+                    }
+
+                    for (const searchTerm of searchTerms) {
+                        for (const titleWord of titleWords) {
+                            // Exact word match in title
+                            if (titleWord === searchTerm) {
+                                searchScore += 10;
+                            }
+                            // Start of word match (high weight)
+                            else if (titleWord.startsWith(searchTerm) || searchTerm.startsWith(titleWord)) {
+                                searchScore += 7;
+                            }
+                            // Partial match in title
+                            else if (titleWord.includes(searchTerm) || searchTerm.includes(titleWord)) {
+                                searchScore += 5;
+                            }
+                            // Close fuzzy match
+                            else if (calculateLevenshteinDistance(titleWord, searchTerm) <= 1) {
+                                searchScore += 4;
+                            }
+                            // Loose fuzzy match
+                            else if (calculateLevenshteinDistance(titleWord, searchTerm) <= 2) {
+                                searchScore += 2;
+                            }
+                        }
+                    }
+                }
+
+                // Location matching with improved relevance
+                if (property.locationSchemaId) {
+                    const locationFields = {
+                        apartmentSociety: { value: property.locationSchemaId.apartmentSociety, weight: 5 },
+                        subLocality: { value: property.locationSchemaId.subLocality, weight: 4 },
+                        locality: { value: property.locationSchemaId.locality, weight: 3 },
+                        city: { value: property.locationSchemaId.city, weight: 2 },
+                        state: { value: property.locationSchemaId.state, weight: 1 }
+                    };
+
+                    for (const [field, { value, weight }] of Object.entries(locationFields)) {
+                        if (!value) continue;
+                        
+                        const locationWords = value.toLowerCase().trim().split(/\s+/);
+                        const locationFullText = value.toLowerCase();
+
+                        // Full phrase match in location
+                        if (locationFullText.includes(searchQuery.toLowerCase())) {
+                            searchScore += weight * 3;
+                        }
+
+                        for (const searchTerm of searchTerms) {
+                            for (const locationWord of locationWords) {
+                                // Exact match
+                                if (locationWord === searchTerm) {
+                                    searchScore += weight * 2;
+                                }
+                                // Partial match
+                                else if (locationWord.includes(searchTerm) || searchTerm.includes(locationWord)) {
+                                    searchScore += weight;
+                                }
+                                // Fuzzy match
+                                else if (calculateLevenshteinDistance(locationWord, searchTerm) <= 2) {
+                                    searchScore += weight * 0.5;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Description matching (lower priority)
+                if (property.description) {
+                    const descWords = property.description.toLowerCase().trim().split(/\s+/);
+                    const descFullText = property.description.toLowerCase();
+
+                    // Full phrase match in description
+                    if (descFullText.includes(searchQuery.toLowerCase())) {
+                        searchScore += 4;
+                    }
+
+                    for (const searchTerm of searchTerms) {
+                        for (const descWord of descWords) {
+                            if (descWord === searchTerm) {
+                                searchScore += 2;
+                            } else if (descWord.includes(searchTerm) || searchTerm.includes(descWord)) {
+                                searchScore += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Calculate total relevance score
+            const relevanceScore = searchScore + locationScore;
+
+            return {
+                ...property,
+                relevanceScore,
+                matches: matchesPropertyType && matchesTransactionType && matchesPrice && matchesLocation && (searchQuery ? searchScore > 0 : true)
+            };
+        }).filter(property => property.matches)
+          .sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+        // Rest of your existing code for populating property details and pagination
+        for (const property of properties) {
+            if (property.propertyDetailSchemaId?.refType) {
+                if (mongoose.models[property.propertyDetailSchemaId.refType]) {
+                    const DynamicModel = mongoose.model(property.propertyDetailSchemaId.refType);
+                    property.propertyDetailSchemaId.refId = await DynamicModel.findById(property.propertyDetailSchemaId.refId)
+                        .select('-_id -createdAt -updatedAt')
+                        .lean();
+                } else {
+                    console.warn(`Model "${property.propertyDetailSchemaId.refType}" not registered`);
+                }
+            }
+            delete property.relevanceScore;
+            delete property.matches;
+        }
+
         const limit = 20;
         const total = properties.length;
         const totalPages = Math.ceil(total / limit);
@@ -987,11 +1291,12 @@ const searchProperties = async (req, res) => {
 
 
 
+
 const aprooveProperty = async (req, res, next) => {
     try {
         const { id } = req.params;
         const property = await Property.findById(id).populate('sellerId');
-        
+
         if (!property) {
             return res.status(404).json({ message: "Property not found." });
         }
@@ -1015,12 +1320,12 @@ const aprooveProperty = async (req, res, next) => {
         // Send activation notification email to seller
         await sendEmail(
             property.sellerId.sellerDetails.email,
-            "Property Activated Successfully", 
-            propertyApprovalNotificationTemplate(property.sellerId.sellerDetails.name, property.propertyTitle)
+            "Property Activated Successfully",
+            ()=> propertyApprovalNotificationTemplate(property.sellerId.sellerDetails.name, property.propertyTitle)
         );
 
-        res.status(200).json({ 
-            message: "Property activated successfully!", 
+        res.status(200).json({
+            message: "Property activated successfully!",
             property: {
                 ...property._doc,
                 status: 'active',
@@ -1043,7 +1348,7 @@ const getProperties = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page) || 1; // Get page number from query params
         const limit = 20; // Number of properties per page
-        
+
         // Calculate skip value for pagination
         const skip = (page - 1) * limit;
 
@@ -1082,7 +1387,7 @@ const getProperties = async (req, res, next) => {
 
 const getPropertiesBySeller = async (req, res) => {
     try {
-        const { page = 1, status = "active" } = req.query;
+        const { page = 1, status = "active", type, transactionType } = req.query;
         const sellerId = req.user._id;
         const limit = 20;
         const skip = (page - 1) * limit;
@@ -1091,10 +1396,20 @@ const getPropertiesBySeller = async (req, res) => {
             return res.status(400).json({ message: "Valid status parameter required (active/requested/sold)" });
         }
 
-        const filter = { 
+        const filter = {
             sellerId: sellerId,
             status: status
         };
+
+        // Add type filter if provided
+        if (type) {
+            filter.propertyType = type;
+        }
+
+        // Add transaction type filter if provided
+        if (transactionType) {
+            filter.transactionType = transactionType;
+        }
 
         const [properties, total] = await Promise.all([
             Property.find(filter)
@@ -1130,7 +1445,7 @@ const getPropertiesBySellerIdAdmin = async (req, res) => {
             return res.status(400).json({ message: "Valid status parameter required (active/requested/sold/blocked)" });
         }
 
-        const filter = { 
+        const filter = {
             sellerId: sellerId,
             status: status
         };
@@ -1165,13 +1480,13 @@ const getSellerProperties = async (req, res, next) => {
         const sellerId = req.params.sellerId; // Correctly extract sellerId from params
         const page = parseInt(req.query.page) || 1; // Get page number from query params
         const limit = 20; // Number of properties per page
-        
+
         // Calculate skip value for pagination
         const skip = (page - 1) * limit;
 
         // Get seller's properties with sorting and pagination
         const [properties, total] = await Promise.all([
-            Property.find({ sellerId: sellerId , status: 'active' })
+            Property.find({ sellerId: sellerId, status: 'active' })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
@@ -1206,5 +1521,5 @@ const getSellerProperties = async (req, res, next) => {
 
 
 
-export { createPropertyDetails,getPropertiesBySeller,getPropertiesBySellerIdAdmin,getSellerProperties, getProperties, aprooveProperty,deletePropertyByAdmin, deletePropertyBySeller, searchProperties, markPropertyAsSold, createLocationDetails, createPricingDetails, createAmenitiesDetails, createProperty, getProperty };
+export { createPropertyDetails, searchPropertiesByAdmin,getPropertiesBySeller, getPropertiesBySellerIdAdmin, getSellerProperties, getProperties, aprooveProperty, deletePropertyByAdmin, deletePropertyBySeller, searchProperties, markPropertyAsSold, createLocationDetails, createPricingDetails, createAmenitiesDetails, createProperty, getProperty };
 

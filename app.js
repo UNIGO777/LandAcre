@@ -81,7 +81,7 @@ app.use('/api/feature-items', featured)
 
 // Root route
 app.get("/", (req, res) => {
-  res.send("LandAcers Portal API is running...");
+  res.send("LandAcers Portal API is running...")
 });
 
 // Error Handling Middleware

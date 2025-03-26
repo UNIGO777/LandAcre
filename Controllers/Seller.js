@@ -21,8 +21,20 @@ const OTP_MAP = new Map(); // Temporary storage for OTP verification
 const EMAIL_VERIFICATION_MAP = new Map();
 
 const sendOTP = async (phone, otp) => {
-    const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${phone}`;
-    await axios.get(otpAPIUrl);
+    // Format phone number - add 91 prefix if it's a 10-digit number
+    const formattedPhone = phone.length === 10 ? `91${phone}` : phone;
+
+    // WhatsApp API endpoint from the screenshot
+    const otpAPIUrl = `https://allexpert.in/api/send`;
+    const payload = {
+        number: formattedPhone,
+        type: "text",
+        message: `helooo keseee hooooo Your OTP is: ${otp}`,
+        instance_id: "67E3AFA6CEA7E",
+        access_token: "67e2ae0f49f84"
+    };
+
+    await axios.post(otpAPIUrl, payload);
 };
 
 const validatePassword = (password) => {
@@ -45,7 +57,7 @@ const validatePhone = (phone) => {
 export const registerSeller = async (req, res) => {
     const { sellerType, name, email, phone, password, companyName, address } = req.body;
     const profilePicture = req.file ? req.file.path.split('/').pop() : null; // Get the profile picture path from req.file
-    
+
     try {
         // Validate input
         if (!name || !email || !phone || !password) {
@@ -73,22 +85,34 @@ export const registerSeller = async (req, res) => {
             return res.status(400).json({ message: "Seller with this email or phone already exists." });
         }
 
-        
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpAPIUrl = `https://allexpert.in/api/send`;
         try {
-            await sendOTP(phone, otp);
+            const formattedPhone = phone.length === 10 ? `91${phone}` : phone;
+            const payload = {
+                number: formattedPhone,
+                type: "text",
+                message: `Welcome to LandAcers!\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nDo not share this OTP with anyone for security reasons.\n\nThank you for choosing LandAcers! 🏠`,
+                instance_id: process.env.WHATSAPP_INTANCE_ID,
+                access_token: process.env.WHATSAPP_ACCESS_TOKEN
+            };
+            await axios.post(otpAPIUrl, payload);
         } catch (error) {
-            return res.status(500).json({ message: "Failed to send OTP. Please try again after some time.", error: error.message });
+            return res.status(500).json({
+                message: "Failed to send OTP via WhatsApp. Please verify the phone number exists on WhatsApp and try again.",
+                error: error.message
+            });
         }
-        // console.log(otp)
-       
+
+
 
         // Store temporary user data with OTP
         OTP_MAP.set(phone, {
             sellerType, name, email, phone, password, companyName, address, profilePicture, otp, otpExpiresAt: Date.now() + OTP_EXPIRY
         });
 
-        res.status(200).json({ message: "OTP sent to your phone. Please verify to complete registration.", phone });
+        res.status(200).json({ message: "OTP sent to your Whatsapp. Please verify to complete registration.", phone });
     } catch (error) {
         console.error("Registration error:", error);
         res.status(500).json({ message: "Server error. Please try again.", error: error.message });
@@ -114,11 +138,11 @@ export const verifySellerRegistrationOTP = async (req, res) => {
     // Save seller to database
     const seller = new Seller({
         sellerType: tempData.sellerType,
-        sellerDetails: { 
-            name: tempData.name, 
-            email: tempData.email, 
-            phone: tempData.phone, 
-            companyName: tempData.companyName, 
+        sellerDetails: {
+            name: tempData.name,
+            email: tempData.email,
+            phone: tempData.phone,
+            companyName: tempData.companyName,
             address: tempData.address,
             profilePicture: tempData.profilePicture // Include profile picture
         },
@@ -126,7 +150,7 @@ export const verifySellerRegistrationOTP = async (req, res) => {
     });
     await seller.save();
 
-    await sendEmail(tempData.email, "Welcome to LandAcers", ()=>AccountRegister(tempData.name));
+    await sendEmail(tempData.email, "Welcome to LandAcers", () => AccountRegister(tempData.name));
 
     OTP_MAP.delete(phone);
     res.status(201).json({ message: "Registration successful! You can now log in." });
@@ -134,30 +158,40 @@ export const verifySellerRegistrationOTP = async (req, res) => {
 
 // **LOGIN SELLER (REQUEST OTP)**
 export const loginSeller = async (req, res) => {
-    const { email, password} = req.body;
+    const { email, password } = req.body;
 
     try {
-        
+
         const seller = await Seller.findOne({ "sellerDetails.email": email, status: "active" });
         if (!seller) return res.status(404).json({ message: "Seller not found." });
         const isMatch = await seller.matchPassword(password);
         if (!isMatch) return res.status(400).json({ message: "Invalid password." });
-        
+
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const phoneNumber = seller.sellerDetails.phone;
         try {
             // await sendOTP(seller.sellerDetails.phone, otp);
-            console.log(otp)
+            // Format phone number - add 91 prefix if it's a 10-digit number
+            const formattedPhone = phoneNumber.length === 10 ? `91${phoneNumber}` : phoneNumber;
+            const otpAPIUrl = `https://allexpert.in/api/send`;
+            const payload = {
+                number: formattedPhone,
+                type: "text",
+                message: `Welcome to LandAcers!\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nDo not share this OTP with anyone for security reasons.\n\nThank you for choosing LandAcers! 🏠`,
+                instance_id: process.env.WHATSAPP_INTANCE_ID,
+                access_token: process.env.WHATSAPP_ACCESS_TOKEN
+            };
+            await axios.post(otpAPIUrl, payload);
         } catch (error) {
-            return res.status(500).json({ message: "Failed to send OTP. Please try again.", error: error.message });
+            return res.status(500).json({ message: "Failed to send OTP. Please verify the phone number exists on WhatsApp and try again.", error: error.message });
         }
-        
-        
-        
+
+
+
         OTP_MAP.set(seller.sellerDetails.email, { otp, otpExpiresAt: Date.now() + OTP_EXPIRY, sellerId: seller._id });
 
-        res.status(200).json({ message: "OTP sent. Please verify to log in."});
+        res.status(200).json({ message: "OTP sent. Please verify to log in." });
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({ message: "Server error. Please try again.", error: error.message });
@@ -167,12 +201,12 @@ export const loginSeller = async (req, res) => {
 // **VERIFY LOGIN OTP**
 export const verifyLoginOTP = async (req, res) => {
     const { email, otp } = req.body;
-    
+
     const tempData = OTP_MAP.get(email);
-  
+
 
     if (!tempData) return res.status(400).json({ message: "Login session not found. Please request OTP again." });
-    
+
     if (Date.now() > tempData.otpExpiresAt) {
         OTP_MAP.delete(email);
         return res.status(400).json({ message: "OTP expired. Please request again." });
@@ -194,7 +228,7 @@ export const verifyLoginOTP = async (req, res) => {
     });
 
     OTP_MAP.delete(email);
-    await sendEmail(seller.sellerDetails.email, "Welcome to LandAcers", ()=>WelcomeBack(seller.sellerDetails.name, seller.sellerType));
+    await sendEmail(seller.sellerDetails.email, "Welcome to LandAcers", () => WelcomeBack(seller.sellerDetails.name, seller.sellerType));
     res.status(200).json({ message: "Login successful!", token, seller: { ...seller.toObject(), password: "" } });
 };
 
@@ -254,12 +288,28 @@ export const sendChangePasswordOTP = async (req, res) => {
     if (!seller) {
         return res.status(404).json({ message: "Seller not found." });
     }
-    
+
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
-    
+
     OTP_MAP.set(phone, { otp }); // Store OTP in the map with phone number as key
-    console.log(`OTP for ${phone}: ${otp}`)
+
+    // Format phone number - add 91 prefix if it's a 10-digit number
+    try {
+        const formattedPhone = phone.length === 10 ? `91${phone}` : phone;
+        const otpAPIUrl = `https://allexpert.in/api/send`;
+        const payload = {
+            number: formattedPhone,
+            type: "text",
+            message: `Password Change Request\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nIf you didn't request this password change, please ignore this message and ensure your account security.\n\nStay secure with LandAcers! 🏠`,
+            instance_id: process.env.WHATSAPP_INTANCE_ID,
+            access_token: process.env.WHATSAPP_ACCESS_TOKEN
+        };
+
+        await axios.post(otpAPIUrl, payload);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to send OTP. Please verify the phone number exists on WhatsApp and try again.", error: error.message });
+    }
     // Send OTP to the seller's phone
     // await sendOTP(phone, otp); // Assuming sendOTP is a function that sends the OTP via SMS
 
@@ -287,8 +337,8 @@ export const changePassword = async (req, res) => {
 
     // Validate input
     // Create password change notification for seller
-    
-   
+
+
 
     // Check if the OTP is valid
     const tempData = OTP_MAP.get(phone);
@@ -360,7 +410,7 @@ export const confirmEmailVerificationOTP = async (req, res) => {
 
     // Find the seller by user ID
     const seller = await Seller.findOne({ _id: userId });
-    
+
     if (!seller) {
         return res.status(404).json({ message: "Seller not found." });
     }
@@ -399,7 +449,7 @@ export const blockSeller = async (req, res) => {
         }
 
         const seller = await Seller.findById(sellerId);
-        
+
         if (!seller) {
             return res.status(404).json({ message: "Seller not found." });
         }
@@ -411,7 +461,7 @@ export const blockSeller = async (req, res) => {
         seller.status = "blocked";
         await seller.save();
 
-        
+
         await sendEmail(seller.sellerDetails.email, "Account Blocked by Admin", () => AccountBloked(seller.sellerDetails.name, 'blocked'));
 
         res.status(200).json({ message: "Seller blocked successfully!" });
@@ -428,7 +478,7 @@ export const DeleteSeller = async (req, res) => {
         }
 
         const seller = await Seller.findById(sellerId);
-        
+
         if (!seller) {
             return res.status(404).json({ message: "Seller not found." });
         }
@@ -500,7 +550,7 @@ export const getSellersByType = async (req, res) => {
         }
 
         // Build query to filter by seller type and active status
-        const query = sellerType === 'Agent' 
+        const query = sellerType === 'Agent'
             ? { sellerType: 'Agent', status: 'active' }  // Filter Agents with active status
             : { sellerType, status: 'active' };          // Filter other types with active status
 
@@ -539,7 +589,7 @@ export const getSellerDetails = async (req, res) => {
 
         // Check if input is valid MongoDB ID or email
         const isMongoId = /^[0-9a-fA-F]{24}$/.test(idOrEmail);
-        const query = isMongoId 
+        const query = isMongoId
             ? { _id: idOrEmail }
             : { 'sellerDetails.email': idOrEmail };
 
@@ -547,7 +597,7 @@ export const getSellerDetails = async (req, res) => {
             .select('sellerDetails sellerType emailVerified status _id')
             .lean();
 
-        
+
 
         if (!seller) {
             return res.status(404).json({ message: "Seller not found" });
@@ -566,9 +616,9 @@ export const getSellerDetails = async (req, res) => {
 
         res.status(200).json(response);
     } catch (error) {
-        res.status(500).json({ 
+        res.status(500).json({
             error: error.message,
-            message: "Error retrieving seller details. Please check the provided ID/email format." 
+            message: "Error retrieving seller details. Please check the provided ID/email format."
         });
     }
 };
@@ -584,7 +634,7 @@ export const getSellerDetailsByToken = async (req, res) => {
             return res.status(404).json({ message: "Seller not found" });
         }
 
-        
+
 
         // Format response with additional statistics
         const response = {
@@ -599,9 +649,9 @@ export const getSellerDetailsByToken = async (req, res) => {
 
         res.status(200).json(response);
     } catch (error) {
-        res.status(500).json({ 
+        res.status(500).json({
             error: error.message,
-            message: "Error retrieving seller details. Please try again later." 
+            message: "Error retrieving seller details. Please try again later."
         });
     }
 };
@@ -613,15 +663,15 @@ export const getSellersByadmin = async (req, res) => {
         const pageNumber = parseInt(page);
         const itemsPerPage = parseInt(perPage);
 
-        if(status !== "active" && status!== "blocked"){
+        if (status !== "active" && status !== "blocked") {
             return res.status(400).json({ message: "Invalid status. Allowed types are: active, blocked." });
         }
 
-        if(type !== "all" && type!== "broker" && type!== "Individual" && type!== "Builder" && type !== "Agent"){
+        if (type !== "all" && type !== "broker" && type !== "Individual" && type !== "Builder" && type !== "Agent") {
             return res.status(400).json({ message: "Invalid type. Allowed types are: all, Agent, Individual, Builder." });
         }
 
-        if(type === 'broker'){
+        if (type === 'broker') {
             type = 'Agent';
         }
 
@@ -637,11 +687,11 @@ export const getSellersByadmin = async (req, res) => {
             filter.status = status;
         }
 
-        if(type){
+        if (type) {
             filter.sellerType = type;
         }
 
-        if(type === "all"){
+        if (type === "all") {
             delete filter.sellerType;
         }
 
@@ -666,7 +716,7 @@ export const getSellersByadmin = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching sellers:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: error.message,
             message: "Failed to retrieve seller data. Please try again later."
         });
@@ -687,15 +737,15 @@ export const searchSellers = async (req, res) => {
 
         // Build search filter
 
-        const filter = { };
+        const filter = {};
 
-        if(status === 'active' || status === 'blocked') {
+        if (status === 'active' || status === 'blocked') {
             filter.status = status;
         }
 
 
-        if(status !== 'active' && status !== 'blocked') {
-           filter.status = 'active';
+        if (status !== 'active' && status !== 'blocked') {
+            filter.status = 'active';
         }
 
         if (type && type !== 'all') {
@@ -748,7 +798,7 @@ export const searchSellers = async (req, res) => {
         });
     } catch (error) {
         console.error('Error searching sellers:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: error.message,
             message: "Failed to search sellers. Please try again later."
         });
@@ -775,7 +825,7 @@ export const sellerAnalytics = async (req, res) => {
         const soldOutProperties = await Property.countDocuments({ sellerId, status: 'sold' });
 
         // Fetch query data by month directly
-        const queryData = await Quary.find({sellerId})
+        const queryData = await Quary.find({ sellerId })
 
         // Map query data to required format
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -799,7 +849,7 @@ export const sellerAnalytics = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching seller analytics:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: error.message,
             message: "Failed to retrieve seller analytics. Please try again later."
         });
@@ -819,7 +869,7 @@ export const unblockSeller = async (req, res) => {
         }
 
         const seller = await Seller.findById(sellerId);
-        
+
         if (!seller) {
             return res.status(404).json({ message: "Seller not found." });
         }

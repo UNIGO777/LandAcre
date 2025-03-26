@@ -70,8 +70,27 @@ const register = async (req, res) => {
         let profilePictureUrl = req.uploadedFiles?.[0]?.path || null; // Use optional chaining for safer access
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${phoneNumber}`;
-        await axios.get(otpAPIUrl);
+        // Format phone number - add 91 prefix if it's a 10-digit number
+        const formattedPhone = phoneNumber.length === 10 ? `91${phoneNumber}` : phoneNumber;
+
+        // WhatsApp API endpoint
+        const otpAPIUrl = `https://allexpert.in/api/send`;
+        const payload = {
+            number: formattedPhone,
+            type: "text",
+            message: `Welcome to LandAcers! Your registration OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
+            instance_id: process.env.WHATSAPP_INTANCE_ID,
+            access_token: process.env.WHATSAPP_ACCESS_TOKEN
+        };
+
+        try {
+            await axios.post(otpAPIUrl, payload);
+        } catch (error) {
+            res.status(500).json({
+                message: "Failed to send OTP. Please verify the phone number exists on WhatsApp and try again.",
+                error: error.message,
+            });
+        }
 
         const hashedOtp = await bcrypt.hash(otp, 10);
         const hashedPassword = password;
@@ -96,7 +115,7 @@ const register = async (req, res) => {
 
         res.status(200).json({
             message:
-                "OTP sent to your phone. Please verify to complete registration.",
+                "OTP sent to your Whatsapp. Please verify to complete registration.",
             phoneNumber: phoneNumber,
         });
     } catch (error) {
@@ -171,9 +190,9 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ 
-            email, 
-            role: { $in: ["user"] } 
+        const user = await User.findOne({
+            email,
+            role: { $in: ["user"] }
         });
         if (!user) {
             return res
@@ -190,7 +209,7 @@ const login = async (req, res) => {
         const token = await user.generateAuthToken();
 
         // Send login notification email
-        await sendEmail(email, "Welcome Back", () => WelcomeBack({userName: user.firstName}));
+        await sendEmail(email, "Welcome Back", () => WelcomeBack({ userName: user.firstName }));
 
         const userData = {
             _id: user._id,
@@ -199,6 +218,7 @@ const login = async (req, res) => {
             email: user.email,
             profilePicture: user.profilePicture,
             phoneNumber: user.phoneNumber,
+            emailVerified: user.emailVerified
         };
 
         // Create login notification
@@ -223,13 +243,13 @@ const login = async (req, res) => {
 };
 
 const adminLogin = async (req, res) => {
-    const { email, password} = req.body;
-    console.log(email, password,"kdsjhakf")
+    const { email, password } = req.body;
+    console.log(email, password, "kdsjhakf")
 
     try {
-        const adminUser = await User.findOne({ 
-            email, 
-            role: { $in: ["admin"] } 
+        const adminUser = await User.findOne({
+            email,
+            role: { $in: ["admin"] }
         });
         if (!adminUser) {
             return res
@@ -255,13 +275,28 @@ const adminLogin = async (req, res) => {
 
         // Send OTP to the admin's phone number
         // const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${adminUser.phoneNumber}`;
-        console.log(otp)
+        try {
+            const otpAPIUrl = `https://allexpert.in/api/send`;
+            // Format phone number - add 91 prefix if it's a 10-digit number
+            const formattedPhone = phoneNumber.length === 10 ? `91${phoneNumber}` : phoneNumber;
+            const payload = {
+                number: formattedPhone,
+                type: "text",
+                message: `Welcome to LandAcers! Your Admin login OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
+                instance_id: process.env.WHATSAPP_INTANCE_ID,
+                access_token: process.env.WHATSAPP_ACCESS_TOKEN
+            };
+            await axios.post(otpAPIUrl, payload);
+        } catch (error) {
+            console.error("Error sending OTP via WhatsApp:", error);
+            throw new Error("Failed to send OTP via WhatsApp");
+        }
         // await axios.get(otpAPIUrl);
 
-        
+
 
         res.status(200).json({
-            message: "Login successful! OTP sent to your phone number.",
+            message: "Login successful! OTP sent to your Whatsapp number.",
         });
     } catch (error) {
         console.error("Admin login error:", error);
@@ -347,9 +382,30 @@ const changePassword = async (req, res) => {
 
         // Generate and send OTP
         const otp = generateOtp(); // Assuming generateOtp method is available
-        const otpAPIUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=lXTjyGuBrqdJ3keOPfzhxmMcoNUD0QZ1SanK48FYCAvLtV7EiI3apiPWobtmYB4UgrTuxhH8J0IklZKG&route=otp&variables_values=${otp}&flash=0&numbers=${phoneNumber}`;
-        await axios.get(otpAPIUrl);
-        
+
+        // Format phone number - add 91 prefix if it's a 10-digit number
+        try {
+            const formattedPhone = phoneNumber.length === 10 ? `91${phoneNumber}` : phoneNumber;
+
+            // WhatsApp API endpoint
+            const otpAPIUrl = `https://allexpert.in/api/send`;
+            const payload = {
+                number: formattedPhone,
+                type: "text",
+                message: `Welcome to LandAcers! Your change password OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
+                instance_id: process.env.WHATSAPP_INTANCE_ID,
+                access_token: process.env.WHATSAPP_ACCESS_TOKEN
+            };
+
+            // Uncomment to enable OTP sending
+            await axios.post(otpAPIUrl, payload);
+        } catch (error) {
+            res.status(500).json({
+                message: "Failed to send OTP. Please verify the phone number exists on WhatsApp and try again.",
+                error: error.message,
+            });
+        }
+
         // If the phone number already exists in the map, delete it first
         if (PasswordChangeTempUserMap.has(phoneNumber)) {
             PasswordChangeTempUserMap.delete(phoneNumber);
@@ -357,11 +413,11 @@ const changePassword = async (req, res) => {
         PasswordChangeTempUserMap.set(phoneNumber, otp);
 
         // Create password change OTP notification
-        
+
 
         res.status(200).json({ message: "OTP sent to user's phone number." });
     } catch (error) {
-        console.error("Error in changePassword:", error);
+       
         res.status(500).json({ message: "Server error. Please try again.", error: error.message });
     }
 };
@@ -416,7 +472,7 @@ const updateProfile = async (req, res) => {
         }
 
         // Filter out fields that should not be updated
-        const updates = Object.keys(req.body).filter(update => 
+        const updates = Object.keys(req.body).filter(update =>
             update !== 'password' && update !== 'email' && update !== 'phoneNumber'
         );
 
@@ -472,7 +528,7 @@ const verifyEmail = async (req, res) => {
         }
 
         const tempUser = RegisterTempUserMap.get(user.email);
-        
+
         if (!tempUser) {
             return res.status(400).json({ message: "Invalid or expired OTP." });
         }
@@ -482,7 +538,7 @@ const verifyEmail = async (req, res) => {
         }
 
         // OTP is correct, mark email as verified
-       
+
         if (user) {
             user.emailVerified = true;
             await user.save();
@@ -594,7 +650,7 @@ const unblockUser = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        
+
 
         // Find the user
         const user = await User.findById(userId);
@@ -653,4 +709,4 @@ const unblockUser = async (req, res) => {
 
 
 
-export { register,blockUser, unblockUser, verifyRegistrationOtp, login, updateProfile, adminLogin, verifyAdminOtp, changePassword, passChangeOtpVerify,initiateEmailVerification,verifyEmail};
+export { register, blockUser, unblockUser, verifyRegistrationOtp, login, updateProfile, adminLogin, verifyAdminOtp, changePassword, passChangeOtpVerify, initiateEmailVerification, verifyEmail };

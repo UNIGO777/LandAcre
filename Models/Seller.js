@@ -67,8 +67,8 @@ SellerSchema.methods.matchPassword = async function (enteredPassword) {
 SellerSchema.methods.generateAuthToken = async function () {
     const user = this;
   
-    if (!secret_key) {
-      throw new Error("Secret key is not defined in environment variables.");
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined in environment variables.");
     }
   
     let expiryDuration = '1d';

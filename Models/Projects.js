@@ -67,6 +67,10 @@ const projectSchema = new mongoose.Schema({
   },
   video: {
     type: String, // URL for a video related to the project
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

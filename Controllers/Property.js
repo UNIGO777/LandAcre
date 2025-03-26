@@ -8,6 +8,7 @@ import User from '../Models/User.js';
 import { propertyApprovalNotificationTemplate } from '../Nodemailer/Tamplates/properties/propertyApprovalNotificationTemplate.js';
 import createNotification from '../Hof/makeNotifiction.js';
 import { json } from 'express';
+import { userPropertyUpdateTemplate, adminPropertyUpdateNotificationTemplate } from '../Nodemailer/Tamplates/properties/updatePropertyRequest.js';
 
 // Middleware for creating property details
 const createPropertyDetails = async (req, res, next) => {
@@ -943,9 +944,159 @@ const deletePropertyByAdmin = async (req, res) => {
 
 const searchProperties = async (req, res) => {
     try {
-        let { propertyType, transactionType, minPrice, maxPrice, locality, city, page = 1, state } = req.query;
+        let { propertyType, transactionType, minPrice, maxPrice, locality, city, page = 1, state, searchQuery, isCommercial, commercialLandType, commercialPlotType } = req.query;
+        
+        // Set default values and normalize inputs
+        if(searchQuery == null){
+            searchQuery = '';
+        }
 
+        if(transactionType == "Buy"){
+            transactionType = "Sell"
+        }
 
+        // Initialize commercial property variables at function scope
+        let isCommercialProperty = false;
+        
+
+        // Natural language query processing
+        if (searchQuery) {
+            searchQuery = searchQuery.toLowerCase();
+            
+            // Extract property type
+            const propertyTypeMap = {
+                'flat': 'FlatApartment',
+                'flats': 'FlatApartment', 
+                'apartment': 'FlatApartment',
+                'apartments': 'FlatApartment',
+                'independent house': 'IndependentHouseVilla',
+                'villa': 'IndependentHouseVilla',
+                'villas': 'IndependentHouseVilla',
+                'plot': 'Plot',
+                'plots': 'Plot',
+                'land': 'Land',
+                'agricultural land': 'Land',
+                'commercial land': 'Land',
+                'farm land': 'Land',
+                'agricultural farm land': 'Land',
+                'industrial land': 'Land',
+                'office': 'Office',
+                'office space': 'Office', 
+                'shop': 'Retail',
+                'shops': 'Retail',
+                'warehouse': 'Storage',
+                'pg': 'RKStudioApartment'
+            };
+            
+            // Check for commercial land types
+            if (searchQuery.includes('commercial land')) {
+                isCommercialProperty = true;
+                commercialLandType = 'Commercial Land';
+                propertyType = 'Land';
+            } else if (searchQuery.includes('agricultural farm land') || 
+                       searchQuery.includes('agricultural land') || 
+                       searchQuery.includes('farm land')) {
+                isCommercialProperty = true;
+                commercialLandType = 'Agricultural / Farm Land';
+                propertyType = 'Land';
+            } else if (searchQuery.includes('industrial land')) {
+                isCommercialProperty = true;
+                commercialLandType = 'Industrial Land';
+                propertyType = 'Land';
+            } else if (searchQuery.includes('industrial plot')) {
+                isCommercialProperty = true;
+                commercialLandType = 'Industrial Plot';
+                propertyType = 'Plot';
+            } else if (searchQuery.includes('commercial plot')) {
+                isCommercialProperty = true;
+                commercialLandType = 'Commercial Plot';
+                propertyType = 'Plot';
+            }
+            
+            // Direct search for commercial types
+            if (searchQuery === 'agricultural / farm land' || searchQuery === 'agricultural farm land') {
+                isCommercialProperty = true;
+                commercialLandType = 'Agricultural / Farm Land';
+                propertyType = 'Land';
+            } else if (searchQuery === 'industrial land') {
+                isCommercialProperty = true;
+                commercialLandType = 'Industrial Land';
+                propertyType = 'Land';
+            } else if (searchQuery === 'commercial land') {
+                isCommercialProperty = true;
+                commercialLandType = 'Commercial Land';
+                propertyType = 'Land';
+            } else if (searchQuery === 'industrial plot') {
+                isCommercialProperty = true;
+                commercialLandType = 'Industrial Plot';
+                propertyType = 'Plot';
+            } else if (searchQuery === 'commercial plot') {
+                isCommercialProperty = true;
+                commercialLandType = 'Commercial Plot';
+                propertyType = 'Plot';
+            }
+
+            // Extract transaction type
+            const transactionTypeMap = {
+                'rent': 'Rent',
+                'for rent': 'Rent',
+                'sale': 'Sell',
+                'for sale': 'Sell',
+                'resale': 'Sell',
+                'buy': 'Sell',
+                'pg': 'PG'
+            };
+
+            // Extract city/location
+            const words = searchQuery.split(' ');
+            for (const word of words) {
+                if (word === 'in' || word === 'at') {
+                    const locationIndex = words.indexOf(word);
+                    if (locationIndex < words.length - 1) {
+                        city = words[locationIndex + 1];
+                        city = city.charAt(0).toUpperCase() + city.slice(1);
+                    }
+                }
+            }
+
+            // Extract property type from query
+            for (const [key, value] of Object.entries(propertyTypeMap)) {
+                if (searchQuery.includes(key)) {
+                    propertyType = value;
+                    break;
+                }
+            }
+
+            // Extract transaction type from query
+            for (const [key, value] of Object.entries(transactionTypeMap)) {
+                if (searchQuery.includes(key)) {
+                    transactionType = value;
+                    break;
+                }
+            }
+
+            // Extract BHK configuration
+            const bhkMatch = searchQuery.match(/(\d+)\s*bhk/);
+            if (bhkMatch) {
+                searchQuery += ` ${bhkMatch[1]} bedroom`;
+            }
+
+            // Extract property status
+            if (searchQuery.includes('ready to move') || searchQuery.includes('ready-to-move')) {
+                searchQuery += ' ready for possession';
+            }
+            if (searchQuery.includes('under construction') || searchQuery.includes('under-construction')) {
+                searchQuery += ' under construction';
+            }
+
+            // Extract price range indicators
+            if (searchQuery.includes('affordable') || searchQuery.includes('budget')) {
+                maxPrice = '5000000'; // 50 lakhs threshold
+            }
+            if (searchQuery.includes('luxury')) {
+                minPrice = '10000000'; // 1 crore threshold
+            }
+        }
 
         if (propertyType == 'Flat-Apartment') {
             propertyType = 'Flat/Apartment'
@@ -954,22 +1105,85 @@ const searchProperties = async (req, res) => {
             transactionType = 'Sell'
         }
 
+        // Build the query object
+        let queryObj = { status: 'active' };
         
+        if (propertyType) {
+            queryObj.propertyType = propertyType;
+        }
+        
+        if (transactionType) {
+            queryObj.transactionType = transactionType;
+        }
 
-        // ✅ Get all active properties first
-        let properties = await Property.find({ status: 'active' })
+        if(isCommercial != 'undefined'){
+            queryObj.isCommercial = isCommercial;
+        }
+        
+        // Handle commercial land types
+        if (isCommercialProperty || commercialLandType || commercialPlotType) {
+            queryObj.isCommercial = true;
+            
+            // Store commercialLandType to use when populating property details
+            req.commercialLandType = commercialLandType;
+            req.commercialPlotType = commercialPlotType;
+        }
+        
+        // If propertyType is directly specified as a commercial type, handle it
+        if (propertyType === 'Agricultural / Farm Land' || 
+            propertyType === 'Industrial Land' || 
+            propertyType === 'Commercial Land') {
+            // Set the actual property type to Land
+            queryObj.propertyType = 'Land';
+            queryObj.isCommercial = true;
+            req.commercialLandType = propertyType;
+        } else if (propertyType === 'Industrial Plot' || propertyType === 'Commercial Plot') {
+            // Set the actual property type to Plot
+            queryObj.propertyType = 'Plot';
+            queryObj.isCommercial = true;
+            req.commercialPlotType = propertyType;
+        }
+        
+        // Get active properties with populated fields
+        let properties = await Property.find(queryObj)
             .populate([
                 { path: 'locationSchemaId', select: '-_id -createdAt -updatedAt' },
                 { path: 'pricingDetails', select: '-_id -createdAt -updatedAt' }
             ])
+            .sort({ createdAt: -1 })
             .select('-__v -sellerId -status -createdAt -updatedAt')
             .lean();
 
-        // ✅ Apply filters after fetching
-        properties = properties.filter(property => {
+        // Helper function for Levenshtein Distance calculation
+        function calculateLevenshteinDistance(str1, str2) {
+            if (Math.abs(str1.length - str2.length) > 3) return Infinity;
+            
+            const track = Array(str2.length + 1).fill(null).map(() =>
+                Array(str1.length + 1).fill(null));
+            
+            for (let i = 0; i <= str1.length; i++) track[0][i] = i;
+            for (let j = 0; j <= str2.length; j++) track[j][0] = j;
+            
+            for (let j = 1; j <= str2.length; j++) {
+                for (let i = 1; i <= str1.length; i++) {
+                    const indicator = str1[i - 1].toLowerCase() === str2[j - 1].toLowerCase() ? 0 : 1;
+                    track[j][i] = Math.min(
+                        track[j][i - 1] + 1,
+                        track[j - 1][i] + 1,
+                        track[j - 1][i - 1] + indicator
+                    );
+                }
+            }
+            
+            return track[str2.length][str1.length];
+        }
+
+        // Calculate relevance scores and filter properties
+        properties = properties.map(property => {
             const matchesPropertyType = !propertyType || property.propertyType === propertyType;
             const matchesTransactionType = !transactionType || property.transactionType === transactionType;
-
+            
+            // Price matching
             const matchesPrice = (() => {
                 if (!minPrice && !maxPrice) return true;
                 const priceField = {
@@ -978,50 +1192,211 @@ const searchProperties = async (req, res) => {
                     'PG': 'pgPrice'
                 }[transactionType] || 'rent';
 
-                const price = property.pricingDetails?.[priceField];
+                // Check if pricingDetails exists and has the relevant price field
+                if (!property.pricingDetails) return false;
+                
+                const price = property.pricingDetails[priceField];
+                // If price is undefined or null, it can't match any price filter
+                if (price === undefined || price === null) return false;
+                
+                const minPriceNum = minPrice ? Number(minPrice) : null;
+                const maxPriceNum = maxPrice ? Number(maxPrice) : null;
+                
                 return (
-                    (!minPrice || price >= parseFloat(minPrice)) &&
-                    (!maxPrice || price <= parseFloat(maxPrice))
+                    (!minPriceNum || price >= minPriceNum) &&
+                    (!maxPriceNum || price <= maxPriceNum)
                 );
             })();
 
-            const matchesLocation =
-                (!city && !locality) ||
-                (property.locationSchemaId &&
-                    (state && property.locationSchemaId.state?.match(new RegExp(state, 'i')) ||
-                        city && property.locationSchemaId.city?.match(new RegExp(city, 'i')) ||
-                        locality && property.locationSchemaId.locality?.match(new RegExp(locality, 'i'))));
-            
-            
+            // Location matching with scoring
+            let locationScore = 0;
+            let locationMatches = false;
+            if (property.locationSchemaId) {
+                if (state && property.locationSchemaId.state?.match(new RegExp(state, 'i'))) {
+                    locationScore += 1;
+                    locationMatches = true;
+                }
+                if (city && property.locationSchemaId.city?.match(new RegExp(city, 'i'))) {
+                    locationScore += 2;
+                    locationMatches = true;
+                }
+                if (locality && property.locationSchemaId.locality?.match(new RegExp(locality, 'i'))) {
+                    locationScore += 3;
+                    locationMatches = true;
+                }
+            }
+            const matchesLocation = !city && !locality && !state || locationMatches;
 
-            
+            // Search query matching with scoring
+            let searchScore = 0;
+            if (searchQuery) {
+                const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/);
+                
+                // Title matching
+                if (property.propertyTitle) {
+                    const titleWords = property.propertyTitle.toLowerCase().trim().split(/\s+/);
+                    const titleFullText = property.propertyTitle.toLowerCase();
+                    
+                    if (titleFullText.includes(searchQuery.toLowerCase())) {
+                        searchScore += 15;
+                    }
 
-            return (
-                matchesPropertyType &&
-                matchesTransactionType &&
-                matchesPrice &&
-                matchesLocation
-            );
-        });
+                    for (const searchTerm of searchTerms) {
+                        for (const titleWord of titleWords) {
+                            if (titleWord === searchTerm) {
+                                searchScore += 10;
+                            }
+                            else if (titleWord.startsWith(searchTerm) || searchTerm.startsWith(titleWord)) {
+                                searchScore += 7;
+                            }
+                            else if (titleWord.includes(searchTerm) || searchTerm.includes(titleWord)) {
+                                searchScore += 5;
+                            }
+                            else if (calculateLevenshteinDistance(titleWord, searchTerm) <= 1) {
+                                searchScore += 4;
+                            }
+                            else if (calculateLevenshteinDistance(titleWord, searchTerm) <= 2) {
+                                searchScore += 2;
+                            }
+                        }
+                    }
+                }
 
+                // Location matching
+                if (property.locationSchemaId) {
+                    const locationFields = {
+                        apartmentSociety: { value: property.locationSchemaId.apartmentSociety, weight: 5 },
+                        subLocality: { value: property.locationSchemaId.subLocality, weight: 4 },
+                        locality: { value: property.locationSchemaId.locality, weight: 3 },
+                        city: { value: property.locationSchemaId.city, weight: 2 },
+                        state: { value: property.locationSchemaId.state, weight: 1 }
+                    };
+
+                    for (const [field, { value, weight }] of Object.entries(locationFields)) {
+                        if (!value) continue;
+                        
+                        const locationWords = value.toLowerCase().trim().split(/\s+/);
+                        const locationFullText = value.toLowerCase();
+
+                        if (locationFullText.includes(searchQuery.toLowerCase())) {
+                            searchScore += weight * 3;
+                        }
+
+                        for (const searchTerm of searchTerms) {
+                            for (const locationWord of locationWords) {
+                                if (locationWord === searchTerm) {
+                                    searchScore += weight * 2;
+                                }
+                                else if (locationWord.includes(searchTerm) || searchTerm.includes(locationWord)) {
+                                    searchScore += weight;
+                                }
+                                else if (calculateLevenshteinDistance(locationWord, searchTerm) <= 2) {
+                                    searchScore += weight * 0.5;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Description matching
+                if (property.description) {
+                    const descWords = property.description.toLowerCase().trim().split(/\s+/);
+                    const descFullText = property.description.toLowerCase();
+
+                    if (descFullText.includes(searchQuery.toLowerCase())) {
+                        searchScore += 4;
+                    }
+
+                    for (const searchTerm of searchTerms) {
+                        for (const descWord of descWords) {
+                            if (descWord === searchTerm) {
+                                searchScore += 2;
+                            } else if (descWord.includes(searchTerm) || searchTerm.includes(descWord)) {
+                                searchScore += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const relevanceScore = searchScore + locationScore;
+
+            return {
+                ...property,
+                relevanceScore,
+                matches: matchesPropertyType && matchesTransactionType && matchesPrice && matchesLocation && (searchQuery ? searchScore > 0 : true)
+            };
+        }).filter(property => property.matches)
+          .sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+        // Populate property details and filter by commercialType if needed
+        const filteredProperties = [];
         for (const property of properties) {
+            let matchesCommercialType = true;
+            
             if (property.propertyDetailSchemaId?.refType) {
                 if (mongoose.models[property.propertyDetailSchemaId.refType]) {
                     const DynamicModel = mongoose.model(property.propertyDetailSchemaId.refType);
                     property.propertyDetailSchemaId.refId = await DynamicModel.findById(property.propertyDetailSchemaId.refId)
                         .select('-_id -createdAt -updatedAt')
                         .lean();
-                } else {
-                    console.warn(`Model "${property.propertyDetailSchemaId.refType}" not registered`);
+                    
+                    // Filter by commercialType if specified
+                    if (property.isCommercial) {
+                        // For Land property type
+                        if (property.propertyType === 'Land' && 
+                            property.propertyDetailSchemaId.refId) {
+                            // Check if landType is Commercial and commercialType matches
+                            if (property.propertyDetailSchemaId.refId.landType === 'Commercial') {
+                                const requestedLandType = req.commercialLandType || req.query.commercialLandType;
+                                if (requestedLandType && property.propertyDetailSchemaId.refId.commercialType !== requestedLandType) {
+                                    matchesCommercialType = false;
+                                }
+                            } else if (property.propertyDetailSchemaId.refId.landType === 'Residential') {
+                                // If residential land but commercial land type requested
+                                if (req.commercialLandType || req.query.commercialLandType) {
+                                    matchesCommercialType = false;
+                                }
+                            } else if (req.commercialLandType === 'Agricultural / Farm Land' && 
+                                     property.propertyDetailSchemaId.refId.commercialType !== 'Agricultural / Farm Land') {
+                                matchesCommercialType = false;
+                            }
+                        }
+                        
+                        // For Plot property type
+                        if (property.propertyType === 'Plot' && 
+                            property.propertyDetailSchemaId.refId) {
+                            // Check if plotType is Commercial and commercialType matches
+                            if (property.propertyDetailSchemaId.refId.plotType === 'Commercial') {
+                                const requestedPlotType = req.commercialPlotType || req.query.commercialPlotType;
+                                if (requestedPlotType && property.propertyDetailSchemaId.refId.commercialType !== requestedPlotType) {
+                                    matchesCommercialType = false;
+                                }
+                            } else if (property.propertyDetailSchemaId.refId.plotType === 'Residential') {
+                                // If residential plot but commercial plot type requested
+                                if (req.commercialPlotType || req.query.commercialPlotType) {
+                                    matchesCommercialType = false;
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            
+            delete property.relevanceScore;
+            delete property.matches;
+            
+            // Only add properties that match the commercial type criteria
+            if (matchesCommercialType) {
+                filteredProperties.push(property);
+            }
         }
+        
+        // Replace the properties array with the filtered one
+        properties = filteredProperties;
 
-        // ✅ Pagination applied after filtering
         const limit = 20;
         const total = properties.length;
-
-
         const totalPages = Math.ceil(total / limit);
         const paginatedProperties = properties.slice((page - 1) * limit, page * limit);
 
@@ -1040,7 +1415,6 @@ const searchProperties = async (req, res) => {
         });
     }
 };
-
 
 const searchPropertiesByAdmin = async (req, res) => {
     try {
@@ -1071,6 +1445,7 @@ const searchPropertiesByAdmin = async (req, res) => {
                     select: 'sellerDetails.name sellerDetails.email -_id'
                 }
             ])
+            .sort({ createdAt: -1 })
             .select('-__v -createdAt -updatedAt')
             .lean();
 
@@ -1112,10 +1487,19 @@ const searchPropertiesByAdmin = async (req, res) => {
                     'PG': 'pgPrice'
                 }[transactionType] || 'rent';
 
-                const price = property.pricingDetails?.[priceField];
+                // Check if pricingDetails exists and has the relevant price field
+                if (!property.pricingDetails) return false;
+                
+                const price = property.pricingDetails[priceField];
+                // If price is undefined or null, it can't match any price filter
+                if (price === undefined || price === null) return false;
+                
+                const minPriceNum = minPrice ? Number(minPrice) : null;
+                const maxPriceNum = maxPrice ? Number(maxPrice) : null;
+                
                 return (
-                    (!minPrice || price >= parseFloat(minPrice)) &&
-                    (!maxPrice || price <= parseFloat(maxPrice))
+                    (!minPriceNum || price >= minPriceNum) &&
+                    (!maxPriceNum || price <= maxPriceNum)
                 );
             })();
 
@@ -1288,6 +1672,217 @@ const searchPropertiesByAdmin = async (req, res) => {
         });
     }
 };
+
+
+const getSimilarProperties = async (req, res) => {
+    try {
+        const propertyId = req.params.id;
+        
+        // Get the original property
+        const originalProperty = await Property.findById(propertyId)
+            .populate('locationSchemaId')
+            .populate('pricingDetails')
+            .populate('propertyDetailSchemaId.refId')
+            .lean();
+
+        if (!originalProperty) {
+            return res.status(404).json({ error: 'Property not found' });
+        }
+
+        // Try multiple matching strategies in order of relevance
+        let similarProperties = [];
+        
+        // Strategy 1: Exact match on property type and transaction type
+        if (similarProperties.length < 5) {
+            const exactMatchQuery = {
+                _id: { $ne: propertyId },
+                status: 'active',
+                propertyType: originalProperty.propertyType,
+                transactionType: originalProperty.transactionType
+            };
+            
+            // Only add city filter if locationSchemaId exists
+            if (originalProperty.locationSchemaId && originalProperty.locationSchemaId.city) {
+                exactMatchQuery['locationSchemaId.city'] = originalProperty.locationSchemaId.city;
+            }
+
+            const exactMatches = await Property.find(exactMatchQuery)
+                .populate('locationSchemaId')
+                .populate('pricingDetails')
+                .limit(10)
+                .lean();
+
+            similarProperties.push(...exactMatches);
+        }
+
+        // Strategy 2: Same property type, different transaction type
+        if (similarProperties.length < 5) {
+            const samePropertyTypeQuery = {
+                _id: { $ne: propertyId },
+                status: 'active',
+                propertyType: originalProperty.propertyType,
+                transactionType: { $ne: originalProperty.transactionType }
+            };
+            
+            // Only add city filter if locationSchemaId exists
+            if (originalProperty.locationSchemaId && originalProperty.locationSchemaId.city) {
+                samePropertyTypeQuery['locationSchemaId.city'] = originalProperty.locationSchemaId.city;
+            }
+
+            const samePropertyTypeMatches = await Property.find(samePropertyTypeQuery)
+                .populate('locationSchemaId')
+                .populate('pricingDetails')
+                .limit(10)
+                .lean();
+
+            similarProperties.push(...samePropertyTypeMatches);
+        }
+
+        // Strategy 3: Same city, any property type
+        if (similarProperties.length < 5 && originalProperty.locationSchemaId && originalProperty.locationSchemaId.city) {
+            const sameCityMatches = await Property.find({
+                _id: { $ne: propertyId },
+                status: 'active',
+                'locationSchemaId.city': originalProperty.locationSchemaId.city
+            })
+            .populate('locationSchemaId')
+            .populate('pricingDetails')
+            .limit(10)
+            .lean();
+
+            similarProperties.push(...sameCityMatches);
+        }
+
+        // Strategy 4: Similar price range, any location
+        if (similarProperties.length < 5 && originalProperty.pricingDetails) {
+            const priceField = originalProperty.transactionType === 'Rent' ? 'rent' : 'salePrice';
+            const targetPrice = originalProperty.pricingDetails[priceField];
+            
+            // Only proceed if targetPrice exists and is a number
+            if (targetPrice && !isNaN(targetPrice)) {
+                const priceRange = {
+                    min: targetPrice * 0.7, // 30% below
+                    max: targetPrice * 1.3  // 30% above
+                };
+
+                const priceQuery = {
+                    _id: { $ne: propertyId },
+                    status: 'active'
+                };
+                
+                // Use dot notation for nested fields
+                priceQuery[`pricingDetails.${priceField}`] = {
+                    $gte: priceRange.min,
+                    $lte: priceRange.max
+                };
+
+                const similarPriceMatches = await Property.find(priceQuery)
+                    .populate('locationSchemaId')
+                    .populate('pricingDetails')
+                    .limit(10)
+                    .lean();
+
+                similarProperties.push(...similarPriceMatches);
+            }
+        }
+
+        // Strategy 5: Fallback - just get some active properties if we still don't have enough
+        if (similarProperties.length < 5) {
+            const fallbackMatches = await Property.find({
+                _id: { $ne: propertyId },
+                status: 'active'
+            })
+            .populate('locationSchemaId')
+            .populate('pricingDetails')
+            .limit(10)
+            .lean();
+
+            similarProperties.push(...fallbackMatches);
+        }
+
+        // Remove duplicates by converting to Set and back
+        const uniqueIds = new Set();
+        similarProperties = similarProperties.filter(property => {
+            const id = property._id.toString();
+            if (uniqueIds.has(id)) {
+                return false;
+            }
+            uniqueIds.add(id);
+            return true;
+        });
+
+        // Calculate similarity scores
+        similarProperties = similarProperties.map(property => {
+            let similarityScore = 0;
+
+            // Property type match
+            if (property.propertyType === originalProperty.propertyType) {
+                similarityScore += 30;
+            }
+
+            // Transaction type match
+            if (property.transactionType === originalProperty.transactionType) {
+                similarityScore += 20;
+            }
+
+            // Location similarity - with null checks
+            if (property.locationSchemaId && originalProperty.locationSchemaId) {
+                if (property.locationSchemaId.city === originalProperty.locationSchemaId.city) {
+                    similarityScore += 15;
+                }
+                if (property.locationSchemaId.locality === originalProperty.locationSchemaId.locality) {
+                    similarityScore += 10;
+                }
+            }
+
+            // Price similarity - with null checks
+            if (property.pricingDetails && originalProperty.pricingDetails) {
+                const priceField = property.transactionType === 'Rent' ? 'rent' : 'salePrice';
+                
+                // Only calculate if both prices exist
+                if (property.pricingDetails[priceField] && originalProperty.pricingDetails[priceField]) {
+                    const priceDiff = Math.abs(
+                        property.pricingDetails[priceField] - originalProperty.pricingDetails[priceField]
+                    );
+                    const priceThreshold = originalProperty.pricingDetails[priceField] * 0.3; // 30% threshold
+                    if (priceDiff <= priceThreshold) {
+                        similarityScore += 15;
+                    }
+                }
+            }
+
+            return {
+                ...property,
+                similarityScore
+            };
+        });
+
+        // Sort by similarity score and take top 5
+        similarProperties.sort((a, b) => b.similarityScore - a.similarityScore);
+        similarProperties = similarProperties.slice(0, 5);
+
+        // Remove similarity scores from final response
+        similarProperties = similarProperties.map(property => {
+            const { similarityScore, ...propertyWithoutScore } = property;
+            return propertyWithoutScore;
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Similar properties retrieved successfully',
+            data: similarProperties
+        });
+
+    } catch (error) {
+        console.error('Error getting similar properties:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            message: 'Error getting similar properties'
+        });
+    }
+};
+
 
 
 
@@ -1521,5 +2116,231 @@ const getSellerProperties = async (req, res, next) => {
 
 
 
-export { createPropertyDetails, searchPropertiesByAdmin,getPropertiesBySeller, getPropertiesBySellerIdAdmin, getSellerProperties, getProperties, aprooveProperty, deletePropertyByAdmin, deletePropertyBySeller, searchProperties, markPropertyAsSold, createLocationDetails, createPricingDetails, createAmenitiesDetails, createProperty, getProperty };
+// Update property by seller
+const updateProperty = async (req, res) => {
+    try {
+        // Find the property to update
+        const propertyId = req.params.id;
+        const property = await Property.findById(propertyId);
+        
+        if (!property) {
+            return res.status(404).json({ error: 'Property not found' });
+        }
+        
+        // Verify seller ownership
+        if (req.user._id.toString() !== property.sellerId.toString()) {
+            return res.status(403).json({ error: 'Unauthorized to update this property' });
+        }
+        
+        // Check if property is in a valid state for updates
+        if (property.status === 'blocked' || property.status === 'sold') {
+            return res.status(400).json({ 
+                error: `Cannot update property with status: ${property.status}` 
+            });
+        }
+
+        // Update location details if provided
+        if (req.body.city || req.body.locality || req.body.state || req.body.subLocality || req.body.apartmentSociety || req.body.houseNo) {
+            await Location.findByIdAndUpdate(property.locationSchemaId, {
+                state: req.body.state || property.locationSchemaId.state,
+                city: req.body.city || property.locationSchemaId.city,
+                locality: req.body.locality || property.locationSchemaId.locality,
+                subLocality: req.body.subLocality || property.locationSchemaId.subLocality,
+                apartmentSociety: req.body.apartmentSociety || property.locationSchemaId.apartmentSociety,
+                houseNo: req.body.houseNo || property.locationSchemaId.houseNo
+            });
+        }
+
+        // Update pricing details if provided
+        if (req.body.rent || req.body.salePrice || req.body.pgPrice || req.body.securityDeposit || req.body.foodIncluded) {
+            await Pricing.findByIdAndUpdate(property.pricingDetails, {
+                rent: req.body.rent,
+                salePrice: req.body.salePrice,
+                pgPrice: req.body.pgPrice,
+                securityDeposit: req.body.securityDeposit,
+                foodIncluded: req.body.foodIncluded
+            });
+        }
+
+        // Update amenities if provided
+        if (req.body.amenities) {
+            await Amenities.findByIdAndUpdate(
+                property.amenitiesSchemaId.refId,
+                JSON.parse(req.body.amenities)
+            );
+        }
+
+        // Update property details based on property type
+        if (req.body.propertyType) {
+            const propertyDetailModel = (() => {
+                switch (property.propertyDetailSchemaId.refType) {
+                    case 'FlatApartment': return FlatApartment;
+                    case 'IndependentHouseVilla': return HouseVilla;
+                    case 'IndependentBuilderFloor': return independentBuilderFloor;
+                    case 'Land': return land;
+                    case 'Plot': return plot;
+                    case 'StudioApartment': return StudioApartment;
+                    case 'ServicedApartment': return servicedApartment;
+                    case 'Farmhouse': return Farmhouse;
+                    case 'Office': return office;
+                    case 'RetailShop': return RetailShop;
+                    case 'Storage': return storage;
+                    case 'Industry': return industry;
+                    case 'Hospitality': return hospitality;
+                    case 'OthersProperties': return othersProperties;
+                    default: return null;
+                }
+            })();
+
+            if (propertyDetailModel) {
+                // Get current property details
+                const currentDetails = await propertyDetailModel.findById(property.propertyDetailSchemaId.refId);
+                
+                // Prepare update object based on property type
+                let updateObj = {};
+                
+                // Common fields for most property types
+                if (req.body.bedrooms) updateObj.bedrooms = req.body.bedrooms;
+                if (req.body.bathrooms) updateObj.bathrooms = req.body.bathrooms;
+                if (req.body.balconies) updateObj.balconies = req.body.balconies;
+                if (req.body.furnishing) updateObj.furnishing = req.body.furnishing;
+                if (req.body.furnishingItems) updateObj.furnishingItems = req.body.furnishingItems;
+                if (req.body.reservedParking) updateObj.reservedParking = req.body.reservedParking;
+                if (req.body.availabilityStatus) updateObj.availabilityStatus = req.body.availabilityStatus;
+                if (req.body.propertyAge) updateObj.propertyAge = req.body.propertyAge;
+                if (req.body.totalFloors) updateObj.totalFloors = req.body.totalFloors;
+                
+                // Area details updates
+                const areaUpdates = {};
+                if (req.body.carpetArea) areaUpdates.carpetArea = req.body.carpetArea;
+                if (req.body.builtUpArea) areaUpdates.builtUpArea = req.body.builtUpArea;
+                if (req.body.superBuiltUpArea) areaUpdates.superBuiltUpArea = req.body.superBuiltUpArea;
+                if (req.body.plotArea) areaUpdates.plotArea = req.body.plotArea;
+                if (req.body.areaUnitForCarpet) areaUpdates.areaUnitForCarpet = req.body.areaUnitForCarpet;
+                if (req.body.areaUnitForBuiltUp) areaUpdates.areaUnitForBuiltUp = req.body.areaUnitForBuiltUp;
+                if (req.body.areaUnitForSuperBuiltUp) areaUpdates.areaUnitForSuperBuiltUp = req.body.areaUnitForSuperBuiltUp;
+                if (req.body.areaUnitForPlot) areaUpdates.areaUnitForPlot = req.body.areaUnitForPlot;
+                
+                if (Object.keys(areaUpdates).length > 0) {
+                    updateObj.areaDetails = { ...currentDetails.areaDetails, ...areaUpdates };
+                }
+                
+                // Type-specific fields
+                switch (property.propertyDetailSchemaId.refType) {
+                    case 'FlatApartment':
+                        if (req.body.floorNumber) updateObj.floorNumber = req.body.floorNumber;
+                        break;
+                    case 'IndependentBuilderFloor':
+                        if (req.body.floorType) updateObj.floorType = req.body.floorType;
+                        if (req.body.propertyOnFloor) updateObj.propertyOnFloor = req.body.propertyOnFloor;
+                        break;
+                    case 'Land':
+                    case 'Plot':
+                        if (req.body.boundaryWall) updateObj.boundaryWall = req.body.boundaryWall;
+                        if (req.body.openSides) updateObj.openSides = req.body.openSides;
+                        if (req.body.constructionDone) updateObj.constructionDone = req.body.constructionDone;
+                        if (req.body.possessionDate) updateObj.possessionDate = new Date(req.body.possessionDate);
+                        if (req.body.lengthOfPlot) updateObj.lengthOfPlot = req.body.lengthOfPlot;
+                        if (req.body.breadthOfPlot) updateObj.breadthOfPlot = req.body.breadthOfPlot;
+                        if (req.body.floorsAllowed) updateObj.floorsAllowed = req.body.floorsAllowed;
+                        break;
+                }
+                
+                // Update property details
+                await propertyDetailModel.findByIdAndUpdate(
+                    property.propertyDetailSchemaId.refId,
+                    updateObj
+                );
+            }
+        }
+
+        // Update main property document
+        const updateData = {};
+        if (req.body.propertyTitle) updateData.propertyTitle = req.body.propertyTitle;
+        if (req.body.description) updateData.description = req.body.description;
+        if (req.body.facingDirection) updateData.facingDirection = req.body.facingDirection;
+        if (req.body.availableFrom) updateData.availableFrom = new Date(req.body.availableFrom);
+        if (req.body.willingToRentOut) updateData.willingToRentOut = req.body.willingToRentOut;
+        if (req.body.availableFor) updateData.availableFor = req.body.availableFor;
+        if (req.body.suitableFor) updateData.suitableFor = req.body.suitableFor;
+        
+        // Handle media updates if files are provided
+        if (req.files) {
+            const mediaUpdates = {};
+            
+            if (req.files.photos && req.files.photos.length > 0) {
+                mediaUpdates.photos = req.files.photos.map(file => file.path.split('/').pop());
+            }
+            
+            if (req.files.video && req.files.video.length > 0) {
+                mediaUpdates.video = req.files.video[0].path.split('/').pop();
+            }
+            
+            if (Object.keys(mediaUpdates).length > 0) {
+                updateData.propertyMedia = mediaUpdates;
+            }
+        }
+        
+        // Update property status to 'requested' for admin review
+        updateData.status = 'requested';
+        
+        const updatedProperty = await Property.findByIdAndUpdate(
+            propertyId,
+            updateData,
+            { new: true }
+        );
+
+        // Get seller details
+        const seller = await Seller.findById(req.user._id);
+        const Admin = await User.findOne({ role: 'admin' });
+
+        // Create notification for seller
+        await createNotification({
+            userType: 'Seller',
+            userId: req.user._id,
+            message: `Your property ${updatedProperty.propertyTitle} (${updatedProperty._id}) has been updated and submitted for admin review`
+        });
+
+        // Create notification for admin
+        await createNotification({
+            userId: Admin._id,
+            userType: 'User',
+            message: `Property update from ${seller.sellerDetails.name} - ${updatedProperty.propertyTitle} (${updatedProperty._id}) requires review`
+        });
+
+        // Send email to seller
+        await sendEmail(
+            seller.sellerDetails.email,
+            "Property update confirmation",
+            () => userPropertyUpdateTemplate(seller.sellerDetails.name, {
+                title: updatedProperty.propertyTitle,
+                type: updatedProperty.propertyType,
+                description: updatedProperty.description,
+                _id: updatedProperty._id
+            })
+        );
+
+        // Send email to admin
+        await sendEmail(
+            process.env.ADMIN_EMAIL,
+            "Property update notification",
+            () => adminPropertyUpdateNotificationTemplate({
+                title: updatedProperty.propertyTitle,
+                type: updatedProperty.propertyType,
+                description: updatedProperty.description,
+                _id: updatedProperty._id
+            })
+        );
+
+        res.status(200).json({
+            message: 'Property updated successfully and submitted for admin review',
+            data: updatedProperty
+        });
+    } catch (error) {
+        console.error('Error updating property:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export { createPropertyDetails, getSimilarProperties, searchPropertiesByAdmin, getPropertiesBySeller, getPropertiesBySellerIdAdmin, getSellerProperties, getProperties, aprooveProperty, deletePropertyByAdmin, deletePropertyBySeller, searchProperties, markPropertyAsSold, createLocationDetails, createPricingDetails, createAmenitiesDetails, createProperty, getProperty, updateProperty };
 

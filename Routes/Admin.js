@@ -33,7 +33,7 @@ router.put('/block/seller/:id', authenticateAdmin, blockSeller);
 router.put('/unblock/seller/:id', authenticateAdmin, unblockSeller);
 router.post('/featured-item',authenticateAdmin,createFeaturedItem);
 router.delete('/featured-item/:id', authenticateAdmin, deleteFeaturedItem);
-router.put('/property/:id', authenticateAdmin, aprooveProperty);
+router.put('/approve/property/:id', authenticateAdmin, aprooveProperty);
 router.put('/project/:id', authenticateAdmin, aprooveProject);
 router.delete('/project/:id', authenticateAdmin, deleteProjectbyAdmin);
 router.delete('/property/:id', authenticateAdmin, deletePropertyByAdmin);

@@ -19,7 +19,7 @@ export const projectCreationRequestTemplate = (userName, projectDetails) => `<!D
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Project Submission Received</h1>
@@ -57,11 +57,11 @@ export const projectApprovalTemplate = (userName, projectDetails) => `<!DOCTYPE 
 </head>
 <body>
     <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Project Approved</h1>
@@ -98,7 +98,7 @@ export const projectBlockedTemplate = (userName, projectDetails) => `<!DOCTYPE h
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -135,7 +135,7 @@ export const projectDeletedTemplate = (userName, projectDetails) => `<!DOCTYPE h
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -173,7 +173,7 @@ export const sellerProjectEnquiryTemplate = (userName, userDetails, projectDetai
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -211,7 +211,7 @@ export const userProjectEnquiryConfirmationTemplate = (userName, projectDetails,
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -249,7 +249,7 @@ export const adminProjectSubmissionNotificationTemplate = (projectDetails, build
 </head>
 <body>
     <div class="header">
-        <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+        <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
     </div>
     <div class="container">
         <div class="content">

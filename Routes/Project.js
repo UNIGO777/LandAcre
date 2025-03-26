@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { createProject, deleteProjectbyBuilder, getProjects, getProjectsBySeller, getProjectsBySellerIdAdmin, getSingleProject, markProjectAsClosed, searchProjectsByLocation} from '../Controllers/Project.js';
+import { createProject, deleteProjectbyBuilder, getProjects, getProjectsBySeller, getProjectsBySellerIdAdmin, getRelatedProjects, getSingleProject, markProjectAsClosed, searchProjectsByLocation} from '../Controllers/Project.js';
 import { authenticateAdmin, authenticateBuilder } from '../middlewares/Authentication.js';
 import { upload } from '../Config/multer.js';
 import { deletePropertyBySeller } from '../Controllers/Property.js';
@@ -32,7 +32,7 @@ router.get('/getsellerprojectbyadmin/:id', authenticateAdmin, getProjectsBySelle
 
 router.get('/projectDetails/:id', getSingleProject);
 
-
+router.get('/related/:id', getRelatedProjects);
 
 router.get('/', getProjects);
 

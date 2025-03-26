@@ -113,6 +113,12 @@ const PropertySchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// Add indexes for frequently queried fields to improve search performance
+PropertySchema.index({ status: 1 }); // Index for status field
+PropertySchema.index({ propertyType: 1, status: 1 }); // Compound index for property type and status
+PropertySchema.index({ transactionType: 1, status: 1 }); // Compound index for transaction type and status
+PropertySchema.index({ isCommercial: 1, status: 1 }); // Compound index for commercial property filtering
+
 const locationSchema = new mongoose.Schema({
   state: {
     type: String,

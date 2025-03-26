@@ -46,7 +46,7 @@ export const propertyApprovalNotificationTemplate = (User,propertyTitle) => `<!D
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sqe0QiDvTwt_4MqEuoRjGrEPVOyXQPFv" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
         </div>
         <div class="content">
             <h1>Property Approval Notification</h1>

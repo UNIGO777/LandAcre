@@ -10,6 +10,7 @@ import { adminProjectSubmissionNotificationTemplate, projectBlockedTemplate, pro
 export const createProject = async (req, res) => {
     try {
         const { projectName, state, city, locality, totalUnits, availableUnits, amenities, launchDate, completionDate, projectType, description } = req.body;
+        // console.log(req.body)
         const sellerId = req.user._id;
 
         // Check if seller exists
@@ -34,12 +35,12 @@ export const createProject = async (req, res) => {
             },
             totalUnits,
             availableUnits,
-            amenities,
+            amenities: JSON.parse(amenities),
             launchDate,
             completionDate,
             projectType,
             sellerId,
-            isUpcomming: req.body.isUpcomming || false,
+            isUpcomming: req.body.isUpcoming || false,
             description,
             images,
             video
@@ -454,22 +455,185 @@ export const getSingleProject = async (req, res) => {
         const project = await Project.findById(req.params.id)
             .populate('sellerId', 'sellerDetails.name sellerDetails.email sellerType');
 
-
-        const relatedProjects = await Project.find({
-            sellerId: project.sellerId._id,
-            status: 'active',
-            _id: { $ne: project._id }
-        })
-            .sort({ createdAt: -1 })
-            .limit(4)
-            .select('projectName location launchDate images');
-
         if (!project) {
             return res.status(404).json({ message: "Project not found" });
         }
-        res.status(200).json({ projectDetail: project, relatedProjects: relatedProjects });
+
+       
+
+        res.status(200).json({ projectDetail: project });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+// Get Related Projects
+export const getRelatedProjects = async (req, res) => {
+    try {
+        const projectId = req.params.id;
+        
+        // Get the original project
+        const originalProject = await Project.findById(projectId)
+            .populate('sellerId')
+            .lean();
+
+        if (!originalProject) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        // Try multiple matching strategies in order of relevance
+        let relatedProjects = [];
+        
+        // Strategy 1: Exact match on project type in same city
+        if (relatedProjects.length < 5) {
+            const exactMatchQuery = {
+                _id: { $ne: projectId },
+                status: 'active',
+                projectType: originalProject.projectType,
+                'location.city': originalProject.location?.city
+            };
+            
+            const exactMatches = await Project.find(exactMatchQuery)
+                .populate('sellerId', 'sellerDetails.name sellerDetails.profilePicture sellerType')
+                .limit(10)
+                .lean();
+
+            relatedProjects.push(...exactMatches);
+        }
+
+        // Strategy 2: Same project type, different city
+        if (relatedProjects.length < 5) {
+            const sameTypeQuery = {
+                _id: { $ne: projectId },
+                status: 'active',
+                projectType: originalProject.projectType,
+                'location.city': { $ne: originalProject.location?.city }
+            };
+            
+            const sameTypeMatches = await Project.find(sameTypeQuery)
+                .populate('sellerId', 'sellerDetails.name sellerDetails.profilePicture sellerType')
+                .limit(10)
+                .lean();
+
+            relatedProjects.push(...sameTypeMatches);
+        }
+
+        // Strategy 3: Same city, any project type
+        if (relatedProjects.length < 5 && originalProject.location?.city) {
+            const sameCityMatches = await Project.find({
+                _id: { $ne: projectId },
+                status: 'active',
+                'location.city': originalProject.location.city,
+                projectType: { $ne: originalProject.projectType }
+            })
+            .populate('sellerId', 'sellerDetails.name sellerDetails.profilePicture sellerType')
+            .limit(10)
+            .lean();
+
+            relatedProjects.push(...sameCityMatches);
+        }
+
+        // Strategy 4: Same state, any project type
+        if (relatedProjects.length < 5 && originalProject.location?.state) {
+            const sameStateMatches = await Project.find({
+                _id: { $ne: projectId },
+                status: 'active',
+                'location.state': originalProject.location.state,
+                'location.city': { $ne: originalProject.location?.city }
+            })
+            .populate('sellerId', 'sellerDetails.name sellerDetails.profilePicture sellerType')
+            .limit(10)
+            .lean();
+
+            relatedProjects.push(...sameStateMatches);
+        }
+
+        // Strategy 5: Fallback - just get some active projects if we still don't have enough
+        if (relatedProjects.length < 5) {
+            const fallbackMatches = await Project.find({
+                _id: { $ne: projectId },
+                status: 'active'
+            })
+            .populate('sellerId', 'sellerDetails.name sellerDetails.profilePicture sellerType')
+            .limit(10)
+            .lean();
+
+            relatedProjects.push(...fallbackMatches);
+        }
+
+        // Remove duplicates by converting to Set and back
+        const uniqueIds = new Set();
+        relatedProjects = relatedProjects.filter(project => {
+            const id = project._id.toString();
+            if (uniqueIds.has(id)) {
+                return false;
+            }
+            uniqueIds.add(id);
+            return true;
+        });
+
+        // Calculate similarity scores
+        relatedProjects = relatedProjects.map(project => {
+            let similarityScore = 0;
+
+            // Project type match
+            if (project.projectType === originalProject.projectType) {
+                similarityScore += 30;
+            }
+
+            // Location similarity - with null checks
+            if (project.location && originalProject.location) {
+                if (project.location.city === originalProject.location.city) {
+                    similarityScore += 20;
+                }
+                if (project.location.state === originalProject.location.state) {
+                    similarityScore += 10;
+                }
+                if (project.location.locality === originalProject.location.locality) {
+                    similarityScore += 15;
+                }
+            }
+
+            // Same seller
+            if (project.sellerId && originalProject.sellerId && 
+                project.sellerId._id.toString() === originalProject.sellerId._id.toString()) {
+                similarityScore += 10;
+            }
+
+            // Upcoming status match
+            if (project.isUpcomming === originalProject.isUpcomming) {
+                similarityScore += 5;
+            }
+
+            return {
+                ...project,
+                similarityScore
+            };
+        });
+
+        // Sort by similarity score and take top 5
+        relatedProjects.sort((a, b) => b.similarityScore - a.similarityScore);
+        relatedProjects = relatedProjects.slice(0, 5);
+
+        // Remove similarity scores from final response
+        relatedProjects = relatedProjects.map(project => {
+            const { similarityScore, ...projectWithoutScore } = project;
+            return projectWithoutScore;
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Related projects retrieved successfully',
+            data: relatedProjects
+        });
+
+    } catch (error) {
+        console.error('Error getting related projects:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            message: 'Error getting related projects'
+        });
     }
 };
 
@@ -702,6 +866,8 @@ export const markProjectAsClosed = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
 
 
 

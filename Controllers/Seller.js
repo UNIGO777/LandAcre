@@ -80,7 +80,13 @@ export const registerSeller = async (req, res) => {
                 .json({ message: "Validation failed", errors: validationErrors });
         }
 
-        const existingSeller = await Seller.findOne({ $or: [{ email }, { phone }] });
+        const existingSeller = await Seller.findOne({
+            $or: [
+                { "sellerDetails.email": email },
+                { "sellerDetails.phone": phone }
+            ],
+            status: "active"
+        });
         if (existingSeller) {
             return res.status(400).json({ message: "Seller with this email or phone already exists." });
         }

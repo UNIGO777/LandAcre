@@ -93,7 +93,7 @@ export const registerSeller = async (req, res) => {
             const payload = {
                 number: formattedPhone,
                 type: "text",
-                message: `Welcome to LandAcers!\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nDo not share this OTP with anyone for security reasons.\n\nThank you for choosing LandAcers! 🏠`,
+                message: `Welcome to LandAcre!\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nDo not share this OTP with anyone for security reasons.\n\nThank you for choosing LandAcre! 🏠`,
                 instance_id: process.env.WHATSAPP_INTANCE_ID,
                 access_token: process.env.WHATSAPP_ACCESS_TOKEN
             };
@@ -150,7 +150,7 @@ export const verifySellerRegistrationOTP = async (req, res) => {
     });
     await seller.save();
 
-    await sendEmail(tempData.email, "Welcome to LandAcers", () => AccountRegister(tempData.name));
+    await sendEmail(tempData.email, "Welcome to LandAcre", () => AccountRegister(tempData.name));
 
     OTP_MAP.delete(phone);
     res.status(201).json({ message: "Registration successful! You can now log in." });
@@ -178,7 +178,7 @@ export const loginSeller = async (req, res) => {
             const payload = {
                 number: formattedPhone,
                 type: "text",
-                message: `Welcome to LandAcers!\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nDo not share this OTP with anyone for security reasons.\n\nThank you for choosing LandAcers! 🏠`,
+                message: `Welcome to LandAcre!\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nDo not share this OTP with anyone for security reasons.\n\nThank you for choosing LandAcre! 🏠`,
                 instance_id: process.env.WHATSAPP_INTANCE_ID,
                 access_token: process.env.WHATSAPP_ACCESS_TOKEN
             };
@@ -228,7 +228,7 @@ export const verifyLoginOTP = async (req, res) => {
     });
 
     OTP_MAP.delete(email);
-    await sendEmail(seller.sellerDetails.email, "Welcome to LandAcers", () => WelcomeBack(seller.sellerDetails.name, seller.sellerType));
+    await sendEmail(seller.sellerDetails.email, "Welcome to LandAcre", () => WelcomeBack(seller.sellerDetails.name, seller.sellerType));
     res.status(200).json({ message: "Login successful!", token, seller: { ...seller.toObject(), password: "" } });
 };
 
@@ -301,7 +301,7 @@ export const sendChangePasswordOTP = async (req, res) => {
         const payload = {
             number: formattedPhone,
             type: "text",
-            message: `Password Change Request\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nIf you didn't request this password change, please ignore this message and ensure your account security.\n\nStay secure with LandAcers! 🏠`,
+            message: `Password Change Request\n\nYour One-Time Password (OTP) is: *${otp}*\n\n⚠️ This OTP is valid for 10 minutes only.\n\nIf you didn't request this password change, please ignore this message and ensure your account security.\n\nStay secure with LandAcre! 🏠`,
             instance_id: process.env.WHATSAPP_INTANCE_ID,
             access_token: process.env.WHATSAPP_ACCESS_TOKEN
         };

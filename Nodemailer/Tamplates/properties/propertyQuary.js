@@ -46,7 +46,7 @@ export const sellerPropertyEnquiryTemplate = (enquirerName, enquirerEmail, enqui
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1 style="text-align: center; color: #333;">New Property Enquiry</h1>
@@ -65,8 +65,8 @@ export const sellerPropertyEnquiryTemplate = (enquirerName, enquirerEmail, enqui
             <p>Please contact the enquirer directly using the provided contact information.</p>
         </div>
         <div class="footer">
-            <p>Best Regards,<br>LandAcers Team</p>
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>Best Regards,<br>LandAcre Team</p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -90,7 +90,7 @@ export const userPropertyEnquiryConfirmationTemplate = (userName, propertyDetail
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1 style="text-align: center; color: #333;">Enquiry Received</h1>
@@ -102,8 +102,8 @@ export const userPropertyEnquiryConfirmationTemplate = (userName, propertyDetail
             <p>The seller will contact you directly to discuss the property details.</p>
         </div>
         <div class="footer">
-            <p>Need assistance? Contact us at <a href="mailto:support@landacers.com">support@landacers.com</a></p>
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>Need assistance? Contact us at <a href="mailto:support@LandAcre.com">support@LandAcre.com</a></p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>

@@ -59,7 +59,7 @@ export default (userName, otp) => `<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1>Email Verification OTP</h1>
@@ -69,8 +69,8 @@ export default (userName, otp) => `<!DOCTYPE html>
             <p>This OTP will expire in 5 minutes. Please do not share this code with anyone.</p>
         </div>
         <div class="footer">
-            <p>Need help? Contact us at <a href="mailto:support@landacers.com">support@landacers.com</a></p>
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>Need help? Contact us at <a href="mailto:support@LandAcre.com">support@LandAcre.com</a></p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>

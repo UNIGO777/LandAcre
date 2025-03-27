@@ -78,7 +78,7 @@ const register = async (req, res) => {
         const payload = {
             number: formattedPhone,
             type: "text",
-            message: `Welcome to LandAcers! Your registration OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
+            message: `Welcome to LandAcre! Your registration OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
             instance_id: process.env.WHATSAPP_INTANCE_ID,
             access_token: process.env.WHATSAPP_ACCESS_TOKEN
         };
@@ -172,7 +172,7 @@ const verifyRegistrationOtp = async (req, res) => {
 
         RegisterTempUserMap.delete(phoneNumber);
 
-        await sendEmail(tempUser.email, "Welcome to LandAcers", Welcome, { firstName: tempUser.firstName });
+        await sendEmail(tempUser.email, "Welcome to LandAcre", Welcome, { firstName: tempUser.firstName });
 
         res.status(201).json({
             message: "Registration successful! You can now login.",
@@ -282,7 +282,7 @@ const adminLogin = async (req, res) => {
             const payload = {
                 number: formattedPhone,
                 type: "text",
-                message: `Welcome to LandAcers! Your Admin login OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
+                message: `Welcome to LandAcre! Your Admin login OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
                 instance_id: process.env.WHATSAPP_INTANCE_ID,
                 access_token: process.env.WHATSAPP_ACCESS_TOKEN
             };
@@ -392,7 +392,7 @@ const changePassword = async (req, res) => {
             const payload = {
                 number: formattedPhone,
                 type: "text",
-                message: `Welcome to LandAcers! Your change password OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
+                message: `Welcome to LandAcre! Your change password OTP is: ${otp}. Please enter this code to verify your account. This OTP will expire in 10 minutes.`,
                 instance_id: process.env.WHATSAPP_INTANCE_ID,
                 access_token: process.env.WHATSAPP_ACCESS_TOKEN
             };

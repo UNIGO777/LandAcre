@@ -20,7 +20,7 @@ router.get('/property/:propertyId',  getPropertyFeedbacks);
 router.get('/project/:projectId',  getProjectFeedbacks);
 
 // Get website feedbacks
-router.get('/landacers',  getWebsiteFeedbacks);
+router.get('/LandAcre',  getWebsiteFeedbacks);
 
 
 // Delete feedback

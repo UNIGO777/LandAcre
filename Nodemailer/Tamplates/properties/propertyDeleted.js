@@ -49,7 +49,7 @@ export const SellerPropertyDeletedTemplate = (userName, propertyDetails) => `<!D
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1>Property Deletion Confirmation</h1>
@@ -60,8 +60,8 @@ export const SellerPropertyDeletedTemplate = (userName, propertyDetails) => `<!D
             <p>This property is no longer visible on our platform.</p>
         </div>
         <div class="footer">
-            <p>Need help? Contact us at <a href="mailto:support@landacers.com">support@landacers.com</a></p>
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>Need help? Contact us at <a href="mailto:support@LandAcre.com">support@LandAcre.com</a></p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -118,19 +118,19 @@ export const adminPropertyDeletedNotificationTemplate = (userName, propertyDetai
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1>Property Deleted by Admin</h1>
             <p>Hello ${userName},</p>
-            <p>Your property has been deleted by the LandAcers administration team. Here are the details:</p>
+            <p>Your property has been deleted by the LandAcre administration team. Here are the details:</p>
             <p><strong>Property Title:</strong> ${propertyDetails.title}</p>
             <p><strong>Property ID:</strong> ${propertyDetails._id}</p>
             <p>This property has been permanently removed from our system.</p>
         </div>
         <div class="footer">
-            <p>Contact support at <a href="mailto:support@landacers.com">support@landacers.com</a></p>
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>Contact support at <a href="mailto:support@LandAcre.com">support@LandAcre.com</a></p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>

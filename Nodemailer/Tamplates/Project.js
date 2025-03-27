@@ -19,7 +19,7 @@ export const projectCreationRequestTemplate = (userName, projectDetails) => `<!D
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1>Project Submission Received</h1>
@@ -30,8 +30,8 @@ export const projectCreationRequestTemplate = (userName, projectDetails) => `<!D
             <p>We will notify you once your project has been approved. This process typically takes 1-2 business days.</p>
         </div>
         <div class="footer">
-            <p>Contact us at <a href="mailto:support@landacers.com">support@landacers.com</a></p>
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>Contact us at <a href="mailto:support@LandAcre.com">support@LandAcre.com</a></p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -57,11 +57,11 @@ export const projectApprovalTemplate = (userName, projectDetails) => `<!DOCTYPE 
 </head>
 <body>
     <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
     <div class="container">
         <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
         <div class="content">
             <h1>Project Approved</h1>
@@ -72,7 +72,7 @@ export const projectApprovalTemplate = (userName, projectDetails) => `<!DOCTYPE 
             <p>You can view your live project here: <a href="${process.env.FRONTEND_URL}/projects/${projectDetails?._id}">View Project</a></p>
         </div>
         <div class="footer">
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -98,7 +98,7 @@ export const projectBlockedTemplate = (userName, projectDetails) => `<!DOCTYPE h
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -110,7 +110,7 @@ export const projectBlockedTemplate = (userName, projectDetails) => `<!DOCTYPE h
         </div>
     </div>
     <div class="footer">
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
 </body>
 </html>`;
@@ -135,7 +135,7 @@ export const projectDeletedTemplate = (userName, projectDetails) => `<!DOCTYPE h
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -148,7 +148,7 @@ export const projectDeletedTemplate = (userName, projectDetails) => `<!DOCTYPE h
         </div>
     </div>
     <div class="footer">
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
 </body>
 </html>`;
@@ -173,7 +173,7 @@ export const sellerProjectEnquiryTemplate = (userName, userDetails, projectDetai
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -186,7 +186,7 @@ export const sellerProjectEnquiryTemplate = (userName, userDetails, projectDetai
         </div>
     </div>
     <div class="footer">
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
 </body>
 </html>`;
@@ -211,7 +211,7 @@ export const userProjectEnquiryConfirmationTemplate = (userName, projectDetails,
 </head>
 <body>
 <div class="header">
-            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+            <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
         </div>
     <div class="container">
         <div class="content">
@@ -222,7 +222,7 @@ export const userProjectEnquiryConfirmationTemplate = (userName, projectDetails,
         </div>
     </div>
     <div class="footer">
-            <p>&copy; 2025 LandAcers. All rights reserved.</p>
+            <p>&copy; 2025 LandAcre. All rights reserved.</p>
         </div>
 </body>
 </html>`;
@@ -249,7 +249,7 @@ export const adminProjectSubmissionNotificationTemplate = (projectDetails, build
 </head>
 <body>
     <div class="header">
-        <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcers Logo">
+        <img src="https://drive.google.com/uc?export=view&id=1sA2OOgiZ_FGHwJ0oMaVxaeCpA8L4TqYd" height="50" width="80" alt="LandAcre Logo">
     </div>
     <div class="container">
         <div class="content">
@@ -267,8 +267,8 @@ export const adminProjectSubmissionNotificationTemplate = (projectDetails, build
         </div>
     </div>
     <div class="footer">
-        <p>Need assistance? Contact our support team at <a href="mailto:support@landacers.com">support@landacers.com</a></p>
-        <p>&copy; 2025 LandAcers. All rights reserved.</p>
+        <p>Need assistance? Contact our support team at <a href="mailto:support@LandAcre.com">support@LandAcre.com</a></p>
+        <p>&copy; 2025 LandAcre. All rights reserved.</p>
     </div>
 </body>
 </html>`;
